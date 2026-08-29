@@ -58,6 +58,28 @@ async function loadOrderDetails(orderId) {
 }
 
 function renderOrderUI(order) {
+
+    /**
+     * Escapes plain text then turns any http(s) URL found inside it into a
+     * clickable "فتح في خرائط جوجل" link, so the raw Google Maps link the
+     * customer's device sent gets rendered as a real button instead of
+     * plain text. Preserves line breaks via white-space handling in CSS.
+     */
+    function linkifyAddress(text) {
+        if (!text) return "-";
+        const escaped = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        return escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) => `
+            <a href="${url}" target="_blank" rel="noopener noreferrer"
+               style="color: var(--primary); font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem;">
+                <i class="fa-solid fa-location-dot"></i> فتح الموقع في خرائط جوجل
+            </a>
+        `);
+    }
+
     const tracking = order.tracking_code || `#${order.id}`;
     
     // Header
@@ -79,9 +101,9 @@ function renderOrderUI(order) {
 
     if (custNameEl) custNameEl.textContent = order.customer_name || "-";
     if (custPhoneEl) custPhoneEl.innerHTML = `<a href="tel:${order.phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${order.phone}</a>`;
-    if (custAddressEl) custAddressEl.textContent = order.address || "-";
+    if (custAddressEl) custAddressEl.innerHTML = linkifyAddress(order.address);
     if (orderDateEl) orderDateEl.textContent = utils.formatDate(order.created_at, true);
-    if (orderNotesEl) orderNotesEl.textContent = order.notes || "-";
+    if (orderNotesEl) orderNotesEl.innerHTML = linkifyAddress(order.notes);
     if (orderBranchEl) {
         const branchName = order.branches 
             ? (i18n.currentLang === "en" ? (order.branches.name_en || order.branches.name_ar) : order.branches.name_ar)
