@@ -205,8 +205,15 @@
 
                     <div class="form-group">
                         <label class="form-label" data-i18n="productCategory">القسم / التصنيف</label>
-                        <select id="productCategorySelect" class="form-control">
+                        <select id="productCategorySelect" class="form-control" onchange="onProductCategoryChange()">
                             <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">الفئة الفرعية (اختياري)</label>
+                        <select id="productSubcategorySelect" class="form-control">
+                            <option value="">-- بدون فئة فرعية --</option>
                         </select>
                     </div>
 

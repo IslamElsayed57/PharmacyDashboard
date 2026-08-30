@@ -57,6 +57,43 @@ async function loadCategoriesDropdown() {
     }
 }
 
+async function onProductCategoryChange() {
+    const categoryId = document.getElementById("productCategorySelect").value;
+    await loadSubcategoriesDropdown(categoryId);
+}
+
+async function loadSubcategoriesDropdown(categoryId, selectedSubcategoryId = "") {
+    const select = document.getElementById("productSubcategorySelect");
+    if (!select) return;
+
+    if (!categoryId) {
+        select.innerHTML = `<option value="">-- بدون فئة فرعية --</option>`;
+        return;
+    }
+
+    try {
+        const { data, error } = await db.getClient()
+            .from("subcategories")
+            .select("id, name_ar, name_en")
+            .eq("category_id", categoryId)
+            .eq("is_active", true);
+
+        if (error) throw error;
+
+        const list = data || [];
+        select.innerHTML = `<option value="">-- بدون فئة فرعية --</option>` +
+            list.map(s => `
+                <option value="${s.id}">${i18n.currentLang === "en" ? (s.name_en || s.name_ar) : s.name_ar}</option>
+            `).join("");
+
+        if (selectedSubcategoryId) {
+            select.value = selectedSubcategoryId;
+        }
+    } catch (e) {
+        console.error("Subcategories dropdown error:", e);
+    }
+}
+
 async function loadProducts() {
     const tbody = document.getElementById("productsTableBody");
     const emptyState = document.getElementById("emptyProductsState");
@@ -147,6 +184,7 @@ function renderProductsTable(items = productsList) {
 function openAddProductModal() {
     document.getElementById("productForm").reset();
     document.getElementById("productIdInput").value = "";
+    document.getElementById("productSubcategorySelect").innerHTML = `<option value="">-- بدون فئة فرعية --</option>`;
     document.getElementById("productModalTitle").textContent = i18n.t("addProduct");
     document.getElementById("productModal").classList.add("active");
 }
@@ -164,6 +202,8 @@ function openEditProductModal(productId) {
     document.getElementById("productBadgeInput").value = p.badge || "";
     document.getElementById("productInStockInput").checked = p.in_stock !== false;
 
+    loadSubcategoriesDropdown(p.category_id || "", p.subcategory_id || "");
+
     document.getElementById("productModalTitle").textContent = i18n.t("editProduct");
     document.getElementById("productModal").classList.add("active");
 }
@@ -180,6 +220,7 @@ async function handleProductFormSubmit(e) {
     const price = parseFloat(document.getElementById("productPriceInput").value);
     const oldPrice = parseFloat(document.getElementById("productOldPriceInput").value) || null;
     const categoryId = document.getElementById("productCategorySelect").value || null;
+    const subcategoryId = document.getElementById("productSubcategorySelect").value || null;
     const badge = document.getElementById("productBadgeInput").value.trim() || null;
     const inStock = document.getElementById("productInStockInput").checked;
     const fileInput = document.getElementById("productImageFile");
@@ -205,6 +246,7 @@ async function handleProductFormSubmit(e) {
             price: price,
             old_price: oldPrice,
             category_id: categoryId,
+            subcategory_id: subcategoryId,
             badge: badge,
             in_stock: inStock,
             updated_at: new Date().toISOString()

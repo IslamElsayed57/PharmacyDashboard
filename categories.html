@@ -196,6 +196,42 @@
         </div>
     </div>
 
+    <!-- Add/Edit Subcategory Modal -->
+    <div class="modal-backdrop" id="subcategoryModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h4 class="card-title" id="subcategoryModalTitle">إضافة فئة فرعية</h4>
+                <button class="btn btn-icon btn-sm" onclick="closeSubcategoryModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="subcategoryForm" onsubmit="handleSubcategoryFormSubmit(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="subcategoryIdInput">
+                    <input type="hidden" id="subcategoryParentCategoryInput">
+
+                    <div class="form-group">
+                        <label class="form-label">اسم الفئة الفرعية (بالعربية) *</label>
+                        <input type="text" id="subcategoryNameArInput" class="form-control" required placeholder="مثال: أدوية القلب وضغط الدم">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">اسم الفئة الفرعية (بالإنجليزية)</label>
+                        <input type="text" id="subcategoryNameEnInput" class="form-control" placeholder="Example: Heart & Blood Pressure">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">أيقونة (اختياري، اسم أيقونة Font Awesome)</label>
+                        <input type="text" id="subcategoryIconInput" class="form-control" placeholder="مثال: fa-heart-pulse">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeSubcategoryModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الفئة الفرعية</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="js/i18n.js"></script>
