@@ -234,18 +234,7 @@ CREATE POLICY "Admin write profiles" ON public.profiles FOR ALL USING (public.is
 
 -- Customers
 DROP POLICY IF EXISTS "Authenticated staff read customers" ON public.customers;
-CREATE POLICY "Branch-scoped customers read" ON public.customers FOR SELECT
-USING (
-  public.is_admin()
-  OR EXISTS (
-    SELECT 1 FROM public.orders o
-    JOIN public.profiles p ON p.id = auth.uid()
-    WHERE o.phone = customers.mobile
-      AND p.role = 'pharmacist'
-      AND p.branch_id IS NOT NULL
-      AND o.branch_id = p.branch_id
-  )
-);
+CREATE POLICY "Authenticated staff read customers" ON public.customers FOR SELECT USING (auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Staff insert/update customers" ON public.customers;
 CREATE POLICY "Staff insert/update customers" ON public.customers FOR ALL USING (auth.role() = 'authenticated' OR public.is_admin());

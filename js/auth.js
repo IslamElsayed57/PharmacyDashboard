@@ -173,10 +173,7 @@ class AuthService {
             const adminOnlyPages = [
                 "staff.html",
                 "reports.html",
-                "branches.html",
-                "customers.html",
-                "settings.html",
-                "categories.html"
+                "settings.html"
             ];
 
             const currentPage = window.location.pathname.split("/").pop();
