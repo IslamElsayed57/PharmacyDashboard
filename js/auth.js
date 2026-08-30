@@ -166,10 +166,21 @@ class AuthService {
         if (this.isPharmacist()) {
             // Hide Admin-only navigation links
             document.querySelectorAll(".admin-only-nav").forEach(el => el.style.display = "none");
-            
-            // If on an admin-only page (staff or reports), redirect to orders
+
+            // Block direct URL access to any admin-only page, not just
+            // the ones that happen to have a hidden nav link — a pharmacist
+            // typing the URL manually must be bounced too.
+            const adminOnlyPages = [
+                "staff.html",
+                "reports.html",
+                "branches.html",
+                "customers.html",
+                "settings.html",
+                "categories.html"
+            ];
+
             const currentPage = window.location.pathname.split("/").pop();
-            if (["staff.html", "reports.html"].includes(currentPage)) {
+            if (adminOnlyPages.includes(currentPage)) {
                 window.location.href = "orders.html";
             }
         }
