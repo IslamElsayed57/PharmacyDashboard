@@ -164,8 +164,9 @@ class AuthService {
 
     enforceRolePermissions() {
         if (this.isPharmacist()) {
-            // Hide Admin-only navigation links
-            document.querySelectorAll(".admin-only-nav").forEach(el => el.style.display = "none");
+            // Hide Admin-only navigation links AND any other admin-only
+            // controls on the page (e.g. top-level "add new" buttons)
+            document.querySelectorAll(".admin-only-nav, .admin-only").forEach(el => el.style.display = "none");
 
             // Block direct URL access to any admin-only page, not just
             // the ones that happen to have a hidden nav link — a pharmacist
