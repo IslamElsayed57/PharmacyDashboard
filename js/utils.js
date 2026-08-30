@@ -220,6 +220,21 @@ const utils = {
             document.body.appendChild(overlay);
         }
 
+        // Always force the mobile menu into a closed state on load. This
+        // guards against the browser restoring a previous page's "open"
+        // state from its back/forward cache (bfcache), which otherwise
+        // makes the sidebar appear open by itself right when a new page
+        // finishes loading, even though nothing was tapped.
+        const closeMobileMenu = () => {
+            sidebar?.classList.remove("mobile-open");
+            overlay.classList.remove("active");
+        };
+        closeMobileMenu();
+
+        window.addEventListener("pageshow", (e) => {
+            if (e.persisted) closeMobileMenu();
+        });
+
         if (btnHamburger && sidebar) {
             btnHamburger.onclick = () => {
                 sidebar.classList.toggle("mobile-open");
@@ -227,8 +242,7 @@ const utils = {
             };
 
             overlay.onclick = () => {
-                sidebar.classList.remove("mobile-open");
-                overlay.classList.remove("active");
+                closeMobileMenu();
             };
         }
     }
