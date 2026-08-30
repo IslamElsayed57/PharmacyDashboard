@@ -148,6 +148,16 @@ class AuthService {
             userAvatarEl.textContent = initial;
         }
 
+        // Admin-only elements are hidden by default directly in the HTML
+        // (inline style="display:none") so a pharmacist never sees them
+        // flash on screen while the profile is still loading. Now that we
+        // know the confirmed role, reveal them for admins only.
+        if (this.isAdmin()) {
+            document.querySelectorAll(".admin-only-nav, .admin-only").forEach(el => {
+                el.style.display = "";
+            });
+        }
+
         // Topbar Branch Badge
         const branchBadge = document.getElementById("topbarBranchIndicator");
         if (branchBadge) {
@@ -164,10 +174,8 @@ class AuthService {
 
     enforceRolePermissions() {
         if (this.isPharmacist()) {
-            // Hide Admin-only navigation links AND any other admin-only
-            // controls on the page (e.g. top-level "add new" buttons)
-            document.querySelectorAll(".admin-only-nav, .admin-only").forEach(el => el.style.display = "none");
-
+            // Admin-only elements are already hidden from first paint via
+            // inline style in the HTML — nothing to hide here anymore.
             // Block direct URL access to any admin-only page, not just
             // the ones that happen to have a hidden nav link — a pharmacist
             // typing the URL manually must be bounced too.
