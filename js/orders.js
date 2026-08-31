@@ -27,6 +27,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.onNewRealtimeOrder = () => loadOrders();
     window.onRealtimeOrderUpdate = () => loadOrders();
     window.onLanguageChange = () => loadOrders();
+
+    // Called by notifications.js when a pending alert is cleared from another
+    // tab / page (e.g. order-details confirms an order) so the mute button
+    // disappears without a full table reload.
+    window._refreshOrderMuteButtons = () => {
+        document.querySelectorAll(".mute-alert-btn").forEach(btn => {
+            const orderId = btn.dataset.orderId;
+            if (!notifications.isPending(orderId)) {
+                // Hide the button — the alert is already cleared
+                btn.style.display = "none";
+            }
+        });
+    };
 });
 
 function setupOrdersEventListeners() {
@@ -167,16 +180,31 @@ async function loadOrders() {
         if (emptyState) emptyState.style.display = "none";
 
         tableBody.innerHTML = data.map(order => {
-            const tracking = order.tracking_code || `#${order.id}`;
-            const customer = order.customer_name || "-";
-            const phone = order.phone || "-";
-            const typeBadge = utils.getOrderTypeBadge(order.order_type || order.delivery_method);
+            const tracking   = order.tracking_code || `#${order.id}`;
+            const customer   = order.customer_name  || "-";
+            const phone      = order.phone           || "-";
+            const typeBadge  = utils.getOrderTypeBadge(order.order_type || order.delivery_method);
             const statusBadge = utils.getStatusBadge(order.status);
-            const dateStr = utils.formatDate(order.created_at, true);
-            const total = utils.formatCurrency(order.total || 0);
+            const dateStr    = utils.formatDate(order.created_at, true);
+            const total      = utils.formatCurrency(order.total || 0);
+
+            // Show mute button only for "new" orders that still have a pending alert
+            const isNew     = (order.status || "").toLowerCase() === "new";
+            const isPending = notifications.isPending(order.id);
+            const muteBtn   = (isNew && isPending)
+                ? `<button
+                        class="btn btn-warning btn-sm mute-alert-btn"
+                        data-order-id="${order.id}"
+                        onclick="muteOrderAlert('${order.id}', this)"
+                        title="${i18n.currentLang === 'ar' ? 'كتم تنبيه هذا الطلب' : 'Mute alert for this order'}"
+                        style="display:flex;align-items:center;gap:0.3rem;">
+                        <i class="fa-solid fa-bell-slash"></i>
+                        <span>${i18n.currentLang === 'ar' ? 'كتم التنبيه' : 'Mute Alert'}</span>
+                   </button>`
+                : "";
 
             return `
-                <tr>
+                <tr ${isNew && isPending ? 'style="background: rgba(251,191,36,0.06);"' : ''}>
                     <td><strong>${tracking}</strong></td>
                     <td>
                         <div style="font-weight: 600;">${customer}</div>
@@ -186,10 +214,11 @@ async function loadOrders() {
                     <td><strong style="color: var(--primary);">${total}</strong></td>
                     <td>${statusBadge}</td>
                     <td><small style="color: var(--text-muted);">${dateStr}</small></td>
-                    <td>
+                    <td style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
                         <a href="order-details.html?id=${order.id}" class="btn btn-outline btn-sm">
                             <i class="fa-solid fa-eye"></i> ${i18n.t("actionViewDetails")}
                         </a>
+                        ${muteBtn}
                     </td>
                 </tr>
             `;
@@ -234,4 +263,33 @@ function renderPaginationControls(container) {
 function changeOrdersPage(newPage) {
     ordersState.page = newPage;
     loadOrders();
+}
+
+/**
+ * Mutes the persistent alert for a single order without taking any
+ * action on the order itself. The pharmacist has acknowledged the order
+ * and will handle it manually.
+ *
+ * @param {string} orderId  - The order ID whose alert should be silenced.
+ * @param {HTMLElement} btn - The mute button element (hidden after click).
+ */
+function muteOrderAlert(orderId, btn) {
+    notifications.removePendingAlert(String(orderId));
+
+    // Hide the button immediately without waiting for a table re-render
+    if (btn) {
+        btn.style.opacity   = "0";
+        btn.style.transform = "scale(0.8)";
+        btn.style.transition = "all 0.25s ease";
+        setTimeout(() => { btn.style.display = "none"; }, 260);
+    }
+
+    // Also remove the highlight from the row
+    const row = btn?.closest("tr");
+    if (row) row.style.background = "";
+
+    const label = i18n.currentLang === "ar"
+        ? "تم كتم تنبيه الطلب"
+        : "Alert muted for this order";
+    utils.showToast(label, "info");
 }

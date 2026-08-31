@@ -241,9 +241,29 @@ const utils = {
                 overlay.classList.toggle("active");
             };
 
+            // Close sidebar when tapping the dim overlay
             overlay.onclick = () => {
                 closeMobileMenu();
             };
+
+            // Close sidebar when tapping any nav link inside it (mobile UX)
+            sidebar.querySelectorAll("a.nav-item").forEach((link) => {
+                link.addEventListener("click", () => {
+                    closeMobileMenu();
+                });
+            });
+
+            // Close sidebar when tapping anywhere outside it on the document
+            document.addEventListener("click", (e) => {
+                if (
+                    sidebar.classList.contains("mobile-open") &&
+                    !sidebar.contains(e.target) &&
+                    e.target !== btnHamburger &&
+                    !btnHamburger.contains(e.target)
+                ) {
+                    closeMobileMenu();
+                }
+            });
         }
     }
 };

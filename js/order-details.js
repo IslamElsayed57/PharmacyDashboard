@@ -220,7 +220,7 @@ async function updateOrderStatus(newStatus) {
 
     try {
         const client = db.getClient();
-        
+
         // 1. Update orders table
         const { error: updateError } = await client
             .from("orders")
@@ -232,7 +232,11 @@ async function updateOrderStatus(newStatus) {
 
         if (updateError) throw updateError;
 
-        // 2. Insert audit log if status history table exists
+        // 2. Pharmacist took action → stop the persistent alert for this order
+        //    This works whether the action is confirm, cancel, or any later step.
+        notifications.removePendingAlert(String(currentOrder.id));
+
+        // 3. Insert audit log if status history table exists
         try {
             await client.from("order_status_history").insert({
                 order_id: currentOrder.id,
