@@ -48,23 +48,26 @@
         display: block;
     }
 
-    /* RTL (Arabic): sidebar is pinned to right:0, hide it to the right */
+    /* RTL (Arabic): sidebar is pinned to right:0, hide it off-screen to the right */
     html[dir="rtl"] .app-sidebar {
         transform: translateX(100%);
         box-shadow: var(--shadow-lg);
         pointer-events: none;
     }
 
-    /* LTR (English): sidebar is pinned to left:0, hide it to the left */
+    /* LTR (English): sidebar is pinned to left:0, hide it off-screen to the left */
     html[dir="ltr"] .app-sidebar {
         transform: translateX(-100%);
         box-shadow: var(--shadow-lg);
         pointer-events: none;
     }
 
-    .app-sidebar.mobile-open {
+    /* Open state — must use !important on pointer-events to beat the higher-
+       specificity html[dir] selectors above that set pointer-events: none.   */
+    html[dir="rtl"] .app-sidebar.mobile-open,
+    html[dir="ltr"] .app-sidebar.mobile-open {
         transform: translateX(0) !important;
-        pointer-events: auto;
+        pointer-events: auto !important;
     }
 
     .sidebar-overlay.active {
