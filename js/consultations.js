@@ -85,11 +85,10 @@ function getConsultStatusBadge(status) {
 
 function getContactMethodBadge(method) {
     const isPhone = (method || "").toLowerCase() !== "whatsapp";
-    const phoneLabel = i18n.currentLang === "ar" ? "مكالمة هاتفية" : "Phone Call";
     if (isPhone) {
-        return `<span class="badge badge-confirmed"><i class="fa-solid fa-phone"></i> ${phoneLabel}</span>`;
+        return `<span class="badge badge-confirmed"><i class="fa-solid fa-phone"></i> ${i18n.t("contactPhone")}</span>`;
     }
-    return `<span class="badge badge-success"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>`;
+    return `<span class="badge badge-success"><i class="fa-brands fa-whatsapp"></i> ${i18n.t("contactWhatsapp")}</span>`;
 }
 
 async function loadConsultations() {
@@ -166,7 +165,7 @@ async function loadConsultations() {
                 <tr ${isNew && isPending ? 'style="background: rgba(34,211,238,0.06);"' : ''}>
                     <td><strong>${patient}</strong></td>
                     <td><a href="tel:${phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${phone}</a></td>
-                    <td>${c.consultation_type || "-"}</td>
+                    <td>${utils.translateConsultType(c.consultation_type)}</td>
                     <td>${contactBadge}</td>
                     <td>${statusBadge}</td>
                     <td><small style="color: var(--text-muted);">${dateStr}</small></td>
@@ -275,10 +274,10 @@ async function openConsultationDetails(id) {
         }
 
         document.getElementById("consultModalTitle").textContent = `${data.patient_name} (${data.phone})`;
-        const contactLabel = data.contact_method === "whatsapp" ? "WhatsApp" : (i18n.currentLang === "ar" ? "مكالمة هاتفية" : "Phone Call");
+        const contactLabel = data.contact_method === "whatsapp" ? i18n.t("contactWhatsapp") : i18n.t("contactPhone");
         document.getElementById("consultModalBody").innerHTML = `
             <div style="display:grid;gap:0.75rem;">
-                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${data.consultation_type || "-"}</p>
+                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.translateConsultType(data.consultation_type)}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${contactLabel}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultPreferredTime")}:</strong> ${data.preferred_time || "-"}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultStatus")}:</strong> ${getConsultStatusBadge(data.status)}</p>
@@ -295,10 +294,10 @@ async function openConsultationDetails(id) {
         document.getElementById("consultModalFooter").innerHTML = `
             <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;width:100%;">
                 <select id="consultStatusSelect" class="form-control" style="flex:1;min-width:150px;">
-                    <option value="new" ${current("new")} data-i18n="statusNew">جديد</option>
-                    <option value="contacted" ${current("contacted")} data-i18n="statusContacted">تم التواصل</option>
-                    <option value="completed" ${current("completed")} data-i18n="statusCompleted">مكتمل</option>
-                    <option value="no_response" ${current("no_response")} data-i18n="statusNoResponse">لا يوجد استجابة</option>
+                    <option value="new" ${current("new")}>${i18n.t("statusNew")}</option>
+                    <option value="contacted" ${current("contacted")}>${i18n.t("statusContacted")}</option>
+                    <option value="completed" ${current("completed")}>${i18n.t("statusCompleted")}</option>
+                    <option value="no_response" ${current("no_response")}>${i18n.t("statusNoResponse")}</option>
                 </select>
                 <button class="btn btn-primary" onclick="updateConsultationStatus('${data.id}', this)">
                     <i class="fa-solid fa-check"></i> <span>${i18n.t("save")}</span>

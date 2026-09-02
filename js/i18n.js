@@ -215,10 +215,22 @@ const TRANSLATIONS = {
         statusContacted: "تم التواصل",
         statusNoResponse: "لا يوجد استجابة",
         consultStatusUpdateSuccess: "تم تحديث حالة الاستشارة بنجاح",
+        contactAll: "جميع وسائل التواصل",
+        contactPhone: "مكالمة هاتفية",
+        contactWhatsapp: "واتساب",
+        consultTypeMed: "استشارة دوائية وتعارضات الأدوية",
+        consultTypeSkin: "روتين العناية بالبشرة والشعر",
+        consultTypeChronic: "متابعة أدوية السكر والضغط والقلب",
+        consultTypeNutrition: "تغذية علاجية ومكملات غذائية",
+        consultTypeMother: "استشارة صحة الأم والطفل",
+        consultTypeOther: "أخرى",
 
         // Consultation Directory (follow-up)
         consultDirectoryTitle: "دليل الاستشارات",
         consultDirectorySubtitle: "متابعة الحالات سابقة التواصل ومعرفة مدى استفادة المريض من النصائح",
+        periodFilterTitle: "الفترة الزمنية (حسب تاريخ المتابعة)",
+        dateRangeFrom: "من:",
+        dateRangeTo: "إلى:",
         consultOutcome: "نتيجة الاستشارة",
         outcomeBenefited: "استفاد من النصيحة",
         outcomeNotBenefited: "لم يستفد من النصيحة",
@@ -435,10 +447,22 @@ const TRANSLATIONS = {
         statusContacted: "Contacted",
         statusNoResponse: "No Response",
         consultStatusUpdateSuccess: "Consultation status updated successfully",
+        contactAll: "All Contact Methods",
+        contactPhone: "Phone Call",
+        contactWhatsapp: "WhatsApp",
+        consultTypeMed: "Medication & Drug Interactions",
+        consultTypeSkin: "Skincare & Hair Care Routine",
+        consultTypeChronic: "Chronic Medication Monitoring",
+        consultTypeNutrition: "Clinical Nutrition & Supplements",
+        consultTypeMother: "Mother & Child Health",
+        consultTypeOther: "Other",
 
         // Consultation Directory (follow-up)
         consultDirectoryTitle: "Consultations Directory",
         consultDirectorySubtitle: "Follow up contacted cases and see whether the patient benefited from the advice",
+        periodFilterTitle: "Period (by follow-up date)",
+        dateRangeFrom: "From:",
+        dateRangeTo: "To:",
         consultOutcome: "Consultation Outcome",
         outcomeBenefited: "Benefited from the advice",
         outcomeNotBenefited: "Did not benefit",
@@ -501,6 +525,11 @@ class I18nManager {
 
         if (triggerRerender && typeof window.onLanguageChange === "function") {
             window.onLanguageChange(this.currentLang);
+        }
+
+        // Keep shared auth UI (branch badge, role labels) in sync with new language
+        if (triggerRerender && typeof auth !== "undefined" && auth && typeof auth.renderUserUI === "function" && auth.profile) {
+            auth.renderUserUI();
         }
     }
 

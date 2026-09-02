@@ -23,7 +23,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupDirectoryListeners();
     await loadDirectory();
 
-    window.onLanguageChange = () => renderDirectoryTable();
+    window.onLanguageChange = () => {
+        populateTypeFilter();
+        renderDirectoryTable();
+    };
     window.onRealtimeConsultationUpdate = () => loadDirectory();
 });
 
@@ -166,11 +169,11 @@ function populateTypeFilter() {
         directoryList.map(c => (c.consultation_type || "").trim()).filter(Boolean)
     )].sort((a, b) => a.localeCompare(b, "ar"));
 
-    typeSelect.innerHTML = '<option value="all" data-i18n="typeAll">جميع الأنواع</option>';
+    typeSelect.innerHTML = `<option value="all">${i18n.t("typeAll")}</option>`;
     types.forEach(t => {
         const opt = document.createElement("option");
         opt.value = t;
-        opt.textContent = t;
+        opt.textContent = utils.translateConsultType(t);
         if (t === selected) opt.selected = true;
         typeSelect.appendChild(opt);
     });
@@ -219,7 +222,7 @@ function renderDirectoryTable() {
             <tr>
                 <td><strong>${c.patient_name || "-"}</strong></td>
                 <td><a href="tel:${c.phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${c.phone}</a></td>
-                <td>${c.consultation_type || "-"}</td>
+                <td>${utils.translateConsultType(c.consultation_type)}</td>
                 <td>${getConsultStatusBadge(c.status)}</td>
                 <td>${getOutcomeBadge(c.outcome)}</td>
                 <td><small style="color: var(--text-muted);">${followUpDate}</small></td>
@@ -297,8 +300,8 @@ async function openFollowUpModal(id) {
 
         document.getElementById("followUpInfo").innerHTML = `
             <div style="background: var(--bg-surface-subtle); padding: 0.75rem; border-radius: var(--radius-md); display:grid; gap:0.35rem;">
-                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${data.consultation_type || "-"}</p>
-                <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${data.contact_method === "whatsapp" ? "WhatsApp" : "Phone"}</p>
+                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.translateConsultType(data.consultation_type)}</p>
+                <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${data.contact_method === "whatsapp" ? i18n.t("contactWhatsapp") : i18n.t("contactPhone")}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultDetails")}:</strong> ${data.details || "-"}</p>
             </div>
         `;

@@ -35,6 +35,23 @@ const utils = {
     },
 
     /**
+     * Translates a known consultation type string (from the customer form)
+     * to the current language. Returns the original value if unknown.
+     */
+    translateConsultType(n) {
+        const TYPE_KEYS = {
+            "استشارة دوائية وتعارضات الأدوية": "consultTypeMed",
+            "روتين العناية بالبشرة والشعر": "consultTypeSkin",
+            "متابعة أدوية السكر والضغط والقلب": "consultTypeChronic",
+            "تغذية علاجية ومكملات غذائية": "consultTypeNutrition",
+            "استشارة صحة الأم والطفل": "consultTypeMother",
+            "أخرى": "consultTypeOther"
+        };
+        const key = TYPE_KEYS[String(n || "").trim()];
+        return key ? i18n.t(key) : (n || "-");
+    },
+
+    /**
      * Generates a status badge HTML
      */
     getStatusBadge(status) {

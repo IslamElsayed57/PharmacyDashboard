@@ -149,7 +149,7 @@
                                 <input type="text" id="directorySearchInput" class="form-control" data-i18n-placeholder="consultSearchPlaceholder" placeholder="بحث باسم المستشير أو رقم الهاتف...">
                             </div>
 
-                            <select id="directoryPeriodFilter" class="form-control" style="max-width: 170px;" title="الفترة الزمنية (حسب تاريخ المتابعة)">
+                            <select id="directoryPeriodFilter" class="form-control" style="max-width: 170px;" title="الفترة الزمنية (حسب تاريخ المتابعة)" data-i18n-title="periodFilterTitle">
                                 <option value="all" data-i18n="filterPeriod">الفترة الزمنية (الكل)</option>
                                 <option value="today" data-i18n="periodToday">اليوم</option>
                                 <option value="yesterday" data-i18n="periodYesterday">أمس</option>
@@ -165,9 +165,9 @@
 
                         <!-- Custom Date Range Row (follow-up date) -->
                         <div id="directoryCustomDateWrap" style="display: none; gap: 0.75rem; align-items: center; margin-bottom: 1.25rem; background: var(--bg-surface-subtle); padding: 0.75rem 1rem; border-radius: var(--radius-md);">
-                            <label style="font-size: 0.82rem; font-weight: 600;">من:</label>
+                            <label style="font-size: 0.82rem; font-weight: 600;"><span data-i18n="dateRangeFrom">من:</span></label>
                             <input type="date" id="directoryCustomStart" class="form-control" style="max-width: 160px;">
-                            <label style="font-size: 0.82rem; font-weight: 600;">إلى:</label>
+                            <label style="font-size: 0.82rem; font-weight: 600;"><span data-i18n="dateRangeTo">إلى:</span></label>
                             <input type="date" id="directoryCustomEnd" class="form-control" style="max-width: 160px;">
                             <button class="btn btn-primary btn-sm" onclick="applyDirectoryDateFilter()" data-i18n="filterApply">تطبيق</button>
                         </div>
