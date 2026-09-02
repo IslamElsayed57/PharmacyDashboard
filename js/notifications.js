@@ -3,19 +3,26 @@
 // ==========================================================================
 
 const PENDING_ALERTS_KEY = "elawadi_pending_alerts";
+const PENDING_CONSULT_KEY = "elawadi_pending_consults";
 const ALERT_INTERVAL_MS  = 5000; // ring every 5 seconds while orders are pending
+const CONSULT_INTERVAL_MS = 6000; // ring every 6 seconds while consultations are pending
 
 class NotificationManager {
     constructor() {
         this.unreadCount   = 0;
+        this.consultUnreadCount = 0;
         this.notifications = [];
         this.channel       = null;
 
         // Set of order IDs (strings) that still need pharmacist action
         this.pendingAlerts = new Set();
 
-        // Reference to the repeating interval
+        // Set of consultation IDs (strings) that still need pharmacist action
+        this.pendingConsultAlerts = new Set();
+
+        // References to the repeating intervals
         this._alertInterval = null;
+        this._consultInterval = null;
     }
 
     // ------------------------------------------------------------------
@@ -27,9 +34,12 @@ class NotificationManager {
         this.setupAudioPermissionCheck();
 
         // If there were already pending alerts (e.g. page was refreshed),
-        // restart the loop immediately so the pharmacist keeps hearing it.
+        // restart the loops immediately so the pharmacist keeps hearing them.
         if (this.pendingAlerts.size > 0) {
             this.startAlertLoop();
+        }
+        if (this.pendingConsultAlerts.size > 0) {
+            this.startConsultAlertLoop();
         }
     }
 
@@ -42,11 +52,16 @@ class NotificationManager {
             if (!client) return;
 
             this.channel = client
-                .channel("pharmacy-dashboard-orders")
+                .channel("pharmacy-dashboard-live")
                 .on(
                     "postgres_changes",
                     { event: "*", schema: "public", table: "orders" },
                     (payload) => this.handleOrderEvent(payload)
+                )
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "consultations" },
+                    (payload) => this.handleConsultationEvent(payload)
                 )
                 .subscribe();
 
@@ -95,8 +110,46 @@ class NotificationManager {
         }
     }
 
+    handleConsultationEvent(payload) {
+        console.log("Realtime consultation payload:", payload);
+
+        if (payload.eventType === "INSERT") {
+            const consult = payload.new;
+            this.consultUnreadCount++;
+            this.updateBadgeUI();
+
+            // Register this consultation as pending → start persistent ringing
+            this.addConsultPendingAlert(String(consult.id));
+
+            // Same toast style as orders, but with the consultation wording
+            const patientName = consult.patient_name || i18n.t("consultPatient");
+            utils.showToast(
+                `🩺 ${i18n.t("newConsultationAlert")} (${patientName})`,
+                "info"
+            );
+
+            // Trigger active page refresh if applicable
+            if (typeof window.onNewRealtimeConsultation === "function") {
+                window.onNewRealtimeConsultation(consult);
+            }
+
+        } else if (payload.eventType === "UPDATE") {
+            const consult = payload.new;
+
+            // If a consultation that was pending just moved away from "new",
+            // it means another tab / device confirmed, contacted, or completed it.
+            if (consult.status && consult.status !== "new") {
+                this.removeConsultPendingAlert(String(consult.id));
+            }
+
+            if (typeof window.onRealtimeConsultationUpdate === "function") {
+                window.onRealtimeConsultationUpdate(consult);
+            }
+        }
+    }
+
     // ------------------------------------------------------------------
-    // Persistent alert loop
+    // Persistent alert loop (orders)
     // ------------------------------------------------------------------
 
     /**
@@ -159,6 +212,68 @@ class NotificationManager {
     }
 
     // ------------------------------------------------------------------
+    // Persistent alert loop (consultations, DIFFERENT sound)
+    // ------------------------------------------------------------------
+
+    /**
+     * Adds a consultation ID to the pending set, persists to localStorage,
+     * and kicks off the repeating consultation alert loop with its own
+     * distinct sound (playConsultationSound).
+     */
+    addConsultPendingAlert(consultationId) {
+        this.pendingConsultAlerts.add(String(consultationId));
+        this._saveConsultPendingToStorage();
+        this.startConsultAlertLoop();
+    }
+
+    /**
+     * Removes a consultation ID from the pending set. Stops the
+     * consultation loop if no more consultations are waiting.
+     */
+    removeConsultPendingAlert(consultationId) {
+        this.pendingConsultAlerts.delete(String(consultationId));
+        this._saveConsultPendingToStorage();
+        if (this.pendingConsultAlerts.size === 0) {
+            this.stopConsultAlertLoop();
+        }
+        // Re-render the consultations table row mute button if we are on that page
+        if (typeof window._refreshConsultMuteButtons === "function") {
+            window._refreshConsultMuteButtons();
+        }
+    }
+
+    /** Returns true if the given consultation ID is still awaiting action. */
+    isConsultPending(consultationId) {
+        return this.pendingConsultAlerts.has(String(consultationId));
+    }
+
+    /**
+     * Starts the repeating consultation sound interval.
+     * Uses a DIFFERENT sound from orders (playConsultationSound).
+     */
+    startConsultAlertLoop() {
+        utils.playConsultationSound();
+
+        if (this._consultInterval) return; // already running
+
+        this._consultInterval = setInterval(() => {
+            if (this.pendingConsultAlerts.size === 0) {
+                this.stopConsultAlertLoop();
+                return;
+            }
+            utils.playConsultationSound();
+        }, CONSULT_INTERVAL_MS);
+    }
+
+    /** Clears the repeating consultation interval. */
+    stopConsultAlertLoop() {
+        if (this._consultInterval) {
+            clearInterval(this._consultInterval);
+            this._consultInterval = null;
+        }
+    }
+
+    // ------------------------------------------------------------------
     // localStorage persistence
     // ------------------------------------------------------------------
     _loadPendingFromStorage() {
@@ -173,6 +288,18 @@ class NotificationManager {
         } catch (e) {
             console.warn("Could not load pending alerts from storage:", e);
         }
+
+        try {
+            const rawConsult = localStorage.getItem(PENDING_CONSULT_KEY);
+            if (rawConsult) {
+                const arr = JSON.parse(rawConsult);
+                if (Array.isArray(arr)) {
+                    arr.forEach(id => this.pendingConsultAlerts.add(String(id)));
+                }
+            }
+        } catch (e) {
+            console.warn("Could not load pending consultation alerts from storage:", e);
+        }
     }
 
     _savePendingToStorage() {
@@ -186,6 +313,17 @@ class NotificationManager {
         }
     }
 
+    _saveConsultPendingToStorage() {
+        try {
+            localStorage.setItem(
+                PENDING_CONSULT_KEY,
+                JSON.stringify([...this.pendingConsultAlerts])
+            );
+        } catch (e) {
+            console.warn("Could not save pending consultation alerts to storage:", e);
+        }
+    }
+
     // ------------------------------------------------------------------
     // Badge UI
     // ------------------------------------------------------------------
@@ -193,7 +331,7 @@ class NotificationManager {
         // Topbar red dot
         const dot = document.getElementById("topbarNotificationDot");
         if (dot) {
-            if (this.unreadCount > 0) dot.classList.add("show");
+            if (this.unreadCount + this.consultUnreadCount > 0) dot.classList.add("show");
             else dot.classList.remove("show");
         }
 
@@ -207,10 +345,22 @@ class NotificationManager {
                 navBadge.classList.remove("show");
             }
         }
+
+        // Sidebar consultations badge
+        const navConsultBadge = document.getElementById("sidebarConsultationsBadge");
+        if (navConsultBadge) {
+            if (this.consultUnreadCount > 0) {
+                navConsultBadge.textContent = this.consultUnreadCount;
+                navConsultBadge.classList.add("show");
+            } else {
+                navConsultBadge.classList.remove("show");
+            }
+        }
     }
 
     clearUnread() {
         this.unreadCount = 0;
+        this.consultUnreadCount = 0;
         this.updateBadgeUI();
     }
 

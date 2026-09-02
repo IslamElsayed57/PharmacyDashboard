@@ -5,6 +5,11 @@
 let productsList = [];
 let categoriesList = [];
 
+let productFilterState = {
+    searchQuery: "",
+    categoryId: "all"
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
     utils.setupMobileSidebar();
 
@@ -15,6 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadCategoriesDropdown();
     await loadProducts();
     setupProductSearch();
+    setupCategoryFilter();
 
     window.onLanguageChange = () => {
         renderProductsTable();
@@ -22,18 +28,54 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 });
 
+function applyProductFilters() {
+    const q = productFilterState.searchQuery.toLowerCase();
+    const catId = productFilterState.categoryId;
+    const filtered = productsList.filter(p => {
+        const matchesSearch =
+            !q ||
+            (p.name_ar && p.name_ar.toLowerCase().includes(q)) ||
+            (p.name_en && p.name_en.toLowerCase().includes(q));
+        const matchesCategory = catId === "all" || p.category_id === catId;
+        return matchesSearch && matchesCategory;
+    });
+    renderProductsTable(filtered);
+}
+
 function setupProductSearch() {
     const input = document.getElementById("productSearchInput");
     if (!input) return;
 
     input.addEventListener("input", (e) => {
-        const q = e.target.value.trim().toLowerCase();
-        const filtered = productsList.filter(p => 
-            (p.name_ar && p.name_ar.toLowerCase().includes(q)) ||
-            (p.name_en && p.name_en.toLowerCase().includes(q))
-        );
-        renderProductsTable(filtered);
+        productFilterState.searchQuery = e.target.value.trim().toLowerCase();
+        applyProductFilters();
     });
+}
+
+function setupCategoryFilter() {
+    const select = document.getElementById("productCategoryFilter");
+    if (!select) return;
+
+    select.addEventListener("change", (e) => {
+        productFilterState.categoryId = e.target.value;
+        applyProductFilters();
+    });
+}
+
+function populateCategoryFilter() {
+    const select = document.getElementById("productCategoryFilter");
+    if (!select) return;
+
+    const selected = productFilterState.categoryId;
+    select.innerHTML = `<option value="all">${i18n.currentLang === "ar" ? "جميع الأقسام" : "All Categories"}</option>` +
+        categoriesList.map(c => `
+            <option value="${c.id}">${i18n.currentLang === "en" ? (c.name_en || c.name_ar) : c.name_ar}</option>
+        `).join("");
+
+    // Preserve selection if it still exists after refresh
+    if ([...select.options].some(o => o.value === selected)) {
+        select.value = selected;
+    }
 }
 
 async function loadCategoriesDropdown() {
@@ -52,6 +94,8 @@ async function loadCategoriesDropdown() {
                     <option value="${c.id}">${i18n.currentLang === "en" ? (c.name_en || c.name_ar) : c.name_ar}</option>
                 `).join("");
         }
+
+        populateCategoryFilter();
     } catch (e) {
         console.error("Categories dropdown error:", e);
     }
@@ -111,7 +155,7 @@ async function loadProducts() {
         if (error) throw error;
 
         productsList = data || [];
-        renderProductsTable(productsList);
+        applyProductFilters();
 
     } catch (err) {
         console.error("Load products error:", err);
@@ -301,4 +345,242 @@ async function toggleProductActive(productId, newStatus) {
             utils.showToast(i18n.t("errorGeneric"), "error");
         }
     });
+}
+
+// ==========================================================================
+// Excel Bulk Import & Template
+// ==========================================================================
+
+// Documented column order for the Excel template (row 1 = headers ignored,
+// data starts from row 2):
+// 0  name_ar     اسم المنتج (بالعربية) - إجباري
+// 1  name_en     اسم المنتج (بالإنجليزية) - إجباري
+// 2  description الوصف
+// 3  price       السعر (ج.م) - إجباري
+// 4  old_price   السعر قبل الخصم
+// 5  category    القسم (اسم القسم بالعربي أو الإنجليزي)
+// 6  badge       الشارة
+// 7  badge_type  نوع الشارة (official/sale/new/bestseller)
+// 8  icon        الأيقونة (مثل fa-pills)
+// 9  in_stock    متوفر بالمخزون (نعم/TRUE/1 أو لا/FALSE/0)
+// 10 is_active   مفعل (نعم/TRUE/1 أو لا/FALSE/0)
+
+const PRODUCT_EXCEL_COLUMNS = ["name_ar", "name_en", "description", "price", "old_price", "category", "badge", "badge_type", "icon", "in_stock", "is_active"];
+
+const PRODUCT_EXCEL_HEADERS = [
+    "اسم المنتج (بالعربية) *",
+    "اسم المنتج (بالإنجليزية) *",
+    "الوصف",
+    "السعر (ج.م) *",
+    "السعر قبل الخصم",
+    "القسم / التصنيف",
+    "الشارة",
+    "نوع الشارة",
+    "الأيقونة",
+    "متوفر بالمخزون",
+    "مفعل"
+];
+
+function downloadProductTemplate() {
+    if (typeof XLSX === "undefined") {
+        utils.showToast(i18n.currentLang === "ar" ? "مكتبة الإكسل غير متاحة" : "Excel library unavailable", "error");
+        return;
+    }
+
+    const data = [PRODUCT_EXCEL_HEADERS];
+    // One sample row to illustrate
+    data.push(["بنادول إكسترا", "Panadol Extra", "مسكن للصداع", "45", "50", "الأدوية والعلاجات", "الأكثر طلباً", "official", "fa-pills", "نعم", "نعم"]);
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws["!cols"] = [
+        { wch: 22 }, { wch: 20 }, { wch: 30 }, { wch: 12 }, { wch: 14 },
+        { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "المنتجات");
+    XLSX.writeFile(wb, "قوالب_المنتجات.xlsx");
+}
+
+function handleProductExcelImport(file) {
+    if (!file) return;
+
+    if (typeof XLSX === "undefined") {
+        utils.showToast(i18n.currentLang === "ar" ? "مكتبة الإكسل غير متاحة" : "Excel library unavailable", "error");
+        return;
+    }
+
+    const validExtensions = ["xlsx", "xls", "csv"];
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (!validExtensions.includes(ext)) {
+        utils.showToast(i18n.currentLang === "ar" ? "من فضلك اختر ملف إكسل (.xlsx أو .xls)" : "Please choose an Excel file (.xlsx or .xls)", "error");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const wb = XLSX.read(e.target.result, { type: "array" });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            if (!ws) {
+                utils.showToast(i18n.currentLang === "ar" ? "الملف فارغ" : "The file is empty", "error");
+                return;
+            }
+
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+            // Drop the header row
+            const dataRows = rows.slice(1);
+
+            if (dataRows.length === 0) {
+                utils.showToast(i18n.currentLang === "ar" ? "لا توجد صفوف بيانات في الملف" : "No data rows found", "error");
+                return;
+            }
+
+            parseAndImportProducts(dataRows);
+        } catch (err) {
+            console.error("Excel parse error:", err);
+            utils.showToast(i18n.currentLang === "ar" ? "تعذر قراءة الملف، تأكد من أنه ملف إكسل صالح" : "Could not read the file", "error");
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function toBool(val) {
+    const s = String(val || "").trim().toLowerCase();
+    return s === "نعم" || s === "true" || s === "1" || s === "yes" || s === "متاح";
+}
+
+function categoryNameToId(name) {
+    if (!name) return null;
+    const n = String(name).trim().toLowerCase();
+    const found = categoriesList.find(c =>
+        (c.name_ar || "").trim().toLowerCase() === n ||
+        (c.name_en || "").trim().toLowerCase() === n
+    );
+    return found ? found.id : null;
+}
+
+function parseAndImportProducts(dataRows) {
+    const validRows = [];
+    const errors = []; // { row, product, reason }
+
+    dataRows.forEach((row, idx) => {
+        const rowNum = idx + 2; // +2 because row 1 is the header
+
+        const rawNameAr = String(row[0] || "").trim();
+        const rawNameEn = String(row[1] || "").trim();
+        const rawPrice = String(row[3] || "").trim();
+
+        if (!rawNameAr) {
+            errors.push({ row: rowNum, product: rawNameAr || "—", reason: "اسم المنتج (بالعربية) مطلوب" });
+            return;
+        }
+
+        if (!rawNameEn) {
+            errors.push({ row: rowNum, product: rawNameAr || "—", reason: "اسم المنتج (بالإنجليزية) مطلوب" });
+            return;
+        }
+
+        const price = parseFloat(rawPrice);
+        if (isNaN(price) || price < 0) {
+            errors.push({ row: rowNum, product: rawNameAr, reason: "السعر غير صحيح / مطلوب" });
+            return;
+        }
+
+        const categoryId = categoryNameToId(row[5]);
+        if (row[5] && !categoryId) {
+            errors.push({ row: rowNum, product: rawNameAr, reason: `القسم غير موجود: "${row[5]}"` });
+            return;
+        }
+
+        const oldPriceRaw = String(row[4] || "").trim();
+        const oldPrice = oldPriceRaw ? parseFloat(oldPriceRaw) : null;
+        if (oldPriceRaw && isNaN(oldPriceRaw)) {
+            errors.push({ row: rowNum, product: rawNameAr, reason: "السعر قبل الخصم غير صحيح" });
+            return;
+        }
+
+        validRows.push({
+            name_ar: rawNameAr,
+            name_en: String(row[1] || "").trim() || null,
+            description: String(row[2] || "").trim() || null,
+            price: price,
+            old_price: Number.isFinite(oldPrice) ? oldPrice : null,
+            category_id: categoryId || null,
+            badge: String(row[6] || "").trim() || null,
+            badge_type: String(row[7] || "").trim() || "official",
+            icon: String(row[8] || "").trim() || "fa-pills",
+            in_stock: String(row[9] || "").trim() === "" ? true : toBool(row[9]),
+            is_active: String(row[10] || "").trim() === "" ? true : toBool(row[10]),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    });
+
+    if (validRows.length === 0) {
+        showProductImportResults(0, errors);
+        return;
+    }
+
+    importProductBatches(validRows, errors);
+}
+
+async function importProductBatches(rows, errors) {
+    const client = db.getClient();
+    const CHUNK = 100;
+    let inserted = 0;
+
+    utils.showToast(
+        i18n.currentLang === "ar" ? "جاري رفع المنتجات..." : "Importing products...",
+        "info"
+    );
+
+    try {
+        for (let i = 0; i < rows.length; i += CHUNK) {
+            const chunk = rows.slice(i, i + CHUNK);
+            const { error } = await client.from("products").insert(chunk);
+            if (error) throw error;
+            inserted += chunk.length;
+        }
+
+        await loadProducts();
+        await loadCategoriesDropdown(); // ensure filter reflects any new categories
+        showProductImportResults(inserted, errors, rows.length);
+    } catch (err) {
+        console.error("Product import error:", err);
+        const allFailed = rows.map((r, idx) => ({ row: idx + 2, product: r.name_ar, reason: "فشل الإدراج في قاعدة البيانات" }));
+        showProductImportResults(0, allFailed, rows.length);
+    }
+}
+
+function showProductImportResults(inserted, errors, total) {
+    const modal = document.getElementById("productImportModal");
+    if (!modal) {
+        utils.showToast(i18n.currentLang === "ar" ? "تم رفع المنتجات" : "Products imported", "success");
+        return;
+    }
+
+    const summary = document.getElementById("productImportSummary");
+    const wrap = document.getElementById("productImportTableWrap");
+    const body = document.getElementById("productImportTableBody");
+
+    const failed = errors.length;
+    const ar = i18n.currentLang === "ar";
+    summary.innerHTML =
+        `✅ ${ar ? `تم استيراد ${inserted} منتج بنجاح` : `Successfully imported ${inserted} products`}` +
+        (failed > 0 ? ` &nbsp; ⚠️ ${ar ? `${failed} صف خاطئ` : `${failed} invalid rows`}` : "");
+
+    if (failed > 0) {
+        body.innerHTML = errors.map(err => `
+            <tr>
+                <td>${err.product}</td>
+                <td style="color: #EF4444;">${err.reason} (${ar ? "صف" : "Row"} ${err.row})</td>
+            </tr>
+        `).join("");
+        wrap.style.display = "block";
+    } else {
+        wrap.style.display = "none";
+    }
+
+    modal.classList.add("active");
 }

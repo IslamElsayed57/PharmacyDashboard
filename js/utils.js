@@ -162,6 +162,52 @@ const utils = {
     },
 
     /**
+     * Plays a distinct synthesized chime for NEW CONSULTATIONS.
+     * Same style/behaviour as the order chime, but with a different
+     * tone so staff can tell a consultation request apart by ear.
+     */
+    playConsultationSound() {
+        if (localStorage.getItem("elawadi_sound_enabled") === "false") return;
+
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+
+            const ctx = new AudioContext();
+            if (ctx.state === "suspended") {
+                ctx.resume();
+            }
+
+            const now = ctx.currentTime;
+
+            // Softer, warmer two-note "ring" (C6 → G5) to differ from orders
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = "sine";
+            osc1.frequency.setValueAtTime(1046.50, now);
+            gain1.gain.setValueAtTime(0.16, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.35);
+
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = "sine";
+            osc2.frequency.setValueAtTime(783.99, now + 0.18);
+            gain2.gain.setValueAtTime(0.18, now + 0.18);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.18);
+            osc2.stop(now + 0.55);
+        } catch (e) {
+            console.warn("Could not play consultation audio:", e);
+        }
+    },
+
+    /**
      * Shows a confirmation modal
      */
     showConfirm(title, message, onConfirm) {

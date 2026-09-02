@@ -38,6 +38,8 @@ const TRANSLATIONS = {
         navDashboard: "الرئيسية والإحصائيات",
         navOrders: "إدارة الطلبات",
         navCustomers: "دليل العملاء",
+        navConsultations: "الاستشارات الصيدلانية",
+        navConsultationsDirectory: "دليل الاستشارات",
         navProducts: "دليل الأدوية والمنتجات",
         navCategories: "الأقسام والتصنيفات",
         navBranches: "الفروع ومنافذ البيع",
@@ -150,6 +152,9 @@ const TRANSLATIONS = {
         productActiveStatus: "الحالة",
         addProduct: "إضافة دواء / منتج جديد",
         editProduct: "تعديل بيانات المنتج",
+        importExcelTitle: "رفع من Excel",
+        downloadExcelTemplate: "تحميل نموذج Excel",
+        allCategories: "جميع الأقسام",
         
         // Categories Page
         categoryNameAr: "اسم القسم (بالعربية)",
@@ -188,9 +193,42 @@ const TRANSLATIONS = {
         // Notifications & Audio
         notificationsTitle: "التنبيهات والإشعارات",
         newOrderAlert: "طلب جديد وارد الآن!",
+        newConsultationAlert: "استشارة صيدلانية جديدة وارد الآن!",
         soundEnabled: "التنبيه الصوتي مفعّل",
         soundDisabled: "التنبيه الصوتي معطّل",
         enableAudioBtn: "تفعيل الصوت التلقائي للتنبيهات",
+
+        // Consultations
+        consultPatient: "المستشير",
+        consultPhone: "رقم الهاتف",
+        consultType: "نوع الاستشارة",
+        consultContactMethod: "وسيلة التواصل",
+        consultPreferredTime: "الموعد المفضل",
+        consultDetails: "تفاصيل الاستشارة",
+        consultStatus: "الحالة",
+        consultDate: "تاريخ الاستشارة",
+        consultActions: "إجراءات",
+        consultSearchPlaceholder: "بحث باسم المستشير أو رقم الهاتف...",
+        noConsultationsFound: "لا توجد استشارات مطابقة للشروط",
+        consultMuteAlert: "كتم تنبيه الاستشارة",
+        consultMuted: "تم كتم تنبيه الاستشارة",
+        statusContacted: "تم التواصل",
+        statusNoResponse: "لا يوجد استجابة",
+        consultStatusUpdateSuccess: "تم تحديث حالة الاستشارة بنجاح",
+
+        // Consultation Directory (follow-up)
+        consultDirectoryTitle: "دليل الاستشارات",
+        consultDirectorySubtitle: "متابعة الحالات سابقة التواصل ومعرفة مدى استفادة المريض من النصائح",
+        consultOutcome: "نتيجة الاستشارة",
+        outcomeBenefited: "استفاد من النصيحة",
+        outcomeNotBenefited: "لم يستفد من النصيحة",
+        outcomeUnknown: "غير معروف",
+        consultOutcomeNotes: "ملاحظات المتابعة",
+        consultFollowedUpBy: "مسؤول المتابعة",
+        consultFollowUpDate: "تاريخ المتابعة",
+        saveOutcome: "حفظ نتيجة المتابعة",
+        outcomeSaveSuccess: "تم حفظ نتيجة المتابعة بنجاح",
+        outcomePlaceholder: "هل استفاد المريض من النصائح المقدمة؟ وهل هناك ملاحظات؟...",
         
         // Messages & Toasts
         loadingData: "جاري تحميل البيانات...",
@@ -220,6 +258,8 @@ const TRANSLATIONS = {
         navDashboard: "Dashboard & KPIs",
         navOrders: "Orders Management",
         navCustomers: "Customers Directory",
+        navConsultations: "Pharmacy Consultations",
+        navConsultationsDirectory: "Consultations Directory",
         navProducts: "Medicines & Catalog",
         navCategories: "Categories",
         navBranches: "Branches Locator",
@@ -332,6 +372,9 @@ const TRANSLATIONS = {
         productActiveStatus: "Status",
         addProduct: "Add New Medicine / Product",
         editProduct: "Edit Product Details",
+        importExcelTitle: "Import from Excel",
+        downloadExcelTemplate: "Download Excel Template",
+        allCategories: "All Categories",
         
         // Categories Page
         categoryNameAr: "Category Name (Arabic)",
@@ -370,9 +413,42 @@ const TRANSLATIONS = {
         // Notifications & Audio
         notificationsTitle: "Notifications",
         newOrderAlert: "New incoming order received!",
+        newConsultationAlert: "New pharmacy consultation received!",
         soundEnabled: "Audio Chimes Enabled",
         soundDisabled: "Audio Chimes Disabled",
         enableAudioBtn: "Enable Sound Alerts",
+
+        // Consultations
+        consultPatient: "Patient",
+        consultPhone: "Phone",
+        consultType: "Consultation Type",
+        consultContactMethod: "Contact Method",
+        consultPreferredTime: "Preferred Time",
+        consultDetails: "Consultation Details",
+        consultStatus: "Status",
+        consultDate: "Consultation Date",
+        consultActions: "Actions",
+        consultSearchPlaceholder: "Search patient name or phone...",
+        noConsultationsFound: "No consultations match your criteria",
+        consultMuteAlert: "Mute consultation alert",
+        consultMuted: "Consultation alert muted",
+        statusContacted: "Contacted",
+        statusNoResponse: "No Response",
+        consultStatusUpdateSuccess: "Consultation status updated successfully",
+
+        // Consultation Directory (follow-up)
+        consultDirectoryTitle: "Consultations Directory",
+        consultDirectorySubtitle: "Follow up contacted cases and see whether the patient benefited from the advice",
+        consultOutcome: "Consultation Outcome",
+        outcomeBenefited: "Benefited from the advice",
+        outcomeNotBenefited: "Did not benefit",
+        outcomeUnknown: "Unknown",
+        consultOutcomeNotes: "Follow-up Notes",
+        consultFollowedUpBy: "Followed up by",
+        consultFollowUpDate: "Follow-up Date",
+        saveOutcome: "Save Follow-up Result",
+        outcomeSaveSuccess: "Follow-up result saved successfully",
+        outcomePlaceholder: "Did the patient benefit from the advice provided? Any notes?...",
         
         // Messages & Toasts
         loadingData: "Loading data...",

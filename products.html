@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="css/responsive.css">
     <!-- Supabase JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS (xlsx) CDN for Excel import/export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -39,6 +41,15 @@
                 <a href="customers.html" class="nav-item">
                     <i class="fa-solid fa-users"></i>
                     <span data-i18n="navCustomers">دليل العملاء</span>
+                </a>
+                <a href="consultations.html" class="nav-item">
+                    <i class="fa-solid fa-headset"></i>
+                    <span data-i18n="navConsultations">الاستشارات الصيدلانية</span>
+                    <span class="nav-badge" id="sidebarConsultationsBadge">0</span>
+                </a>
+                <a href="consultations-directory.html" class="nav-item">
+                    <i class="fa-solid fa-clipboard-user"></i>
+                    <span data-i18n="navConsultationsDirectory">دليل الاستشارات</span>
                 </a>
 
                 <div class="nav-section-title" data-i18n="navProducts">الأدوية والكتالوج</div>
@@ -134,12 +145,25 @@
                     </div>
 
                     <div class="card-body">
-                        <!-- Search Bar -->
+                        <!-- Filters & Search Bar -->
                         <div class="filter-bar">
                             <div class="search-input-wrap">
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 <input type="text" id="productSearchInput" class="form-control" data-i18n-placeholder="searchPlaceholderProducts" placeholder="بحث باسم الدواء أو المنتج...">
                             </div>
+
+                            <select id="productCategoryFilter" class="form-control" style="max-width: 200px;">
+                                <option value="all" data-i18n="allCategories">جميع الأقسام</option>
+                            </select>
+
+                            <input type="file" id="productExcelFile" accept=".xlsx,.xls" style="display: none;" onchange="handleProductExcelImport(this.files[0])">
+
+                            <button class="btn btn-outline btn-sm admin-only" style="display:none" onclick="document.getElementById('productExcelFile').click()" title="تحميل/رفع المنتجات من ملف إكسل">
+                                <i class="fa-solid fa-file-import"></i> <span data-i18n="importExcelTitle">رفع من Excel</span>
+                            </button>
+                            <button class="btn btn-outline btn-sm admin-only" style="display:none" onclick="downloadProductTemplate()" title="تحميل نموذج إكسل جاهز">
+                                <i class="fa-solid fa-file-excel"></i> <span data-i18n="downloadExcelTemplate">تحميل نموذج Excel</span>
+                            </button>
                         </div>
 
                         <!-- Table -->
@@ -238,6 +262,33 @@
                     <button type="submit" id="saveProductBtn" class="btn btn-primary" data-i18n="save">حفظ المنتج</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Excel Import Results Modal -->
+    <div class="modal-backdrop" id="productImportModal">
+        <div class="modal-card" style="max-width: 620px;">
+            <div class="modal-header">
+                <h4 class="card-title" data-i18n="importExcelTitle">نتيجة رفع المنتجات من Excel</h4>
+                <button class="btn btn-icon btn-sm" onclick="document.getElementById('productImportModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="productImportSummary" style="margin-bottom: 1rem; font-weight: 600;"></div>
+                <div class="table-responsive" id="productImportTableWrap" style="max-height: 320px; overflow-y: auto; display: none;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="productNameAr">اسم المنتج</th>
+                                <th>السبب</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productImportTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="document.getElementById('productImportModal').classList.remove('active')" data-i18n="close">إغلاق</button>
+            </div>
         </div>
     </div>
 

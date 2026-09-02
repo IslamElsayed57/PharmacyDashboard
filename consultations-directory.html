@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صيدليات العوضي - إعدادات النظام</title>
+    <title>صيدليات العوضي - دليل الاستشارات</title>
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- CSS -->
@@ -45,7 +45,7 @@
                     <span data-i18n="navConsultations">الاستشارات الصيدلانية</span>
                     <span class="nav-badge" id="sidebarConsultationsBadge">0</span>
                 </a>
-                <a href="consultations-directory.html" class="nav-item">
+                <a href="consultations-directory.html" class="nav-item active">
                     <i class="fa-solid fa-clipboard-user"></i>
                     <span data-i18n="navConsultationsDirectory">دليل الاستشارات</span>
                 </a>
@@ -75,7 +75,7 @@
                 </a>
 
                 <div class="nav-section-title" data-i18n="navSettings">النظام</div>
-                <a href="settings.html" class="nav-item active admin-only-nav" style="display:none">
+                <a href="settings.html" class="nav-item admin-only-nav" style="display:none">
                     <i class="fa-solid fa-gear"></i>
                     <span data-i18n="navSettings">إعدادات النظام</span>
                 </a>
@@ -103,7 +103,7 @@
                     <button class="btn-hamburger" id="btnHamburger">
                         <i class="fa-solid fa-bars"></i>
                     </button>
-                    <h1 class="topbar-title" data-i18n="navSettings">إعدادات النظام</h1>
+                    <h1 class="topbar-title" data-i18n="navConsultationsDirectory">دليل الاستشارات</h1>
                 </div>
 
                 <div class="topbar-right">
@@ -128,81 +128,73 @@
 
             <!-- Page Content -->
             <main class="page-content">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;" class="order-details-grid">
-                    <!-- Pharmacy Information -->
-                    <div class="content-card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <i class="fa-solid fa-hospital" style="color: var(--primary);"></i>
-                                <span>معلومات الصيدلية الأساسية</span>
-                            </div>
+                <div class="content-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-clipboard-user" style="color: var(--primary);"></i>
+                            <span data-i18n="consultDirectoryTitle">دليل الاستشارات</span>
                         </div>
-                        <form onsubmit="savePharmacySettings(event)" style="padding: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">الاسم بالعربية</label>
-                                <input type="text" id="settingPharmacyNameAr" class="form-control settings-input" value="صيدليات العوضي">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">الاسم بالإنجليزية</label>
-                                <input type="text" id="settingPharmacyNameEn" class="form-control settings-input" value="Elawadi Pharmacies">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">الخط الساخن</label>
-                                <input type="text" id="settingHotline" class="form-control settings-input" value="19850">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">رقم خدمة عملاء واتساب</label>
-                                <input type="text" id="settingWhatsapp" class="form-control settings-input" value="01000000000">
-                            </div>
-                            <button type="submit" class="btn btn-primary admin-save-btn" data-i18n="save">حفظ البيانات</button>
-                        </form>
                     </div>
 
-                    <!-- Delivery Rules -->
-                    <div class="content-card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <i class="fa-solid fa-truck-fast" style="color: var(--primary);"></i>
-                                <span>إعدادات وسياسة التوصيل</span>
-                            </div>
-                        </div>
-                        <form onsubmit="saveDeliverySettings(event)" style="padding: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">سعر خدمة التوصيل الافتراضي (ج.م)</label>
-                                <input type="number" step="1" id="settingDefaultDeliveryFee" class="form-control settings-input" value="25.00">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">الحد الأدنى للتوصيل المجاني (ج.م)</label>
-                                <input type="number" step="50" id="settingFreeDeliveryThreshold" class="form-control settings-input" value="500.00">
-                            </div>
-                            <button type="submit" class="btn btn-primary admin-save-btn" data-i18n="save">حفظ قواعد التوصيل</button>
-                        </form>
-                    </div>
+                    <div class="card-body">
+                        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span data-i18n="consultDirectorySubtitle">متابعة الحالات سابقة التواصل ومعرفة مدى استفادة المريض من النصائح</span>
+                        </p>
 
-                    <!-- Audio Notifications & Theme Options -->
-                    <div class="content-card" style="grid-column: 1 / -1;">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <i class="fa-solid fa-sliders" style="color: var(--primary);"></i>
-                                <span>تفضيلات العرض والتنبيهات</span>
-                            </div>
-                        </div>
-                        <div class="card-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                                <div>
-                                    <strong style="display: block; margin-bottom: 0.25rem;">التنبيهات الصوتية للطلبات الجديدة</strong>
-                                    <small style="color: var(--text-muted);">تشغيل نغمة عند وصول طلب أدوية جديد في الوقت الفعلي</small>
-                                </div>
-                                <input type="checkbox" id="settingSoundToggle" checked style="width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer;">
+                        <!-- Filters: Search + Follow-up Date Period + Consultation Type -->
+                        <div class="filter-bar">
+                            <div class="search-input-wrap">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="directorySearchInput" class="form-control" data-i18n-placeholder="consultSearchPlaceholder" placeholder="بحث باسم المستشير أو رقم الهاتف...">
                             </div>
 
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <div>
-                                    <strong style="display: block; margin-bottom: 0.25rem;">المظهر الليلي (Dark Mode)</strong>
-                                    <small style="color: var(--text-muted);">تفعيل التباين العالي والمظهر المريح للعينين في النوبات الليلية</small>
-                                </div>
-                                <input type="checkbox" id="settingThemeToggle" style="width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer;">
-                            </div>
+                            <select id="directoryPeriodFilter" class="form-control" style="max-width: 170px;" title="الفترة الزمنية (حسب تاريخ المتابعة)">
+                                <option value="all" data-i18n="filterPeriod">الفترة الزمنية (الكل)</option>
+                                <option value="today" data-i18n="periodToday">اليوم</option>
+                                <option value="yesterday" data-i18n="periodYesterday">أمس</option>
+                                <option value="week" data-i18n="periodThisWeek">هذا الأسبوع</option>
+                                <option value="month" data-i18n="periodThisMonth">هذا الشهر</option>
+                                <option value="custom" data-i18n="periodCustom">فترة مخصصة</option>
+                            </select>
+
+                            <select id="directoryTypeFilter" class="form-control" style="max-width: 200px;">
+                                <option value="all" data-i18n="typeAll">جميع الأنواع</option>
+                            </select>
+                        </div>
+
+                        <!-- Custom Date Range Row (follow-up date) -->
+                        <div id="directoryCustomDateWrap" style="display: none; gap: 0.75rem; align-items: center; margin-bottom: 1.25rem; background: var(--bg-surface-subtle); padding: 0.75rem 1rem; border-radius: var(--radius-md);">
+                            <label style="font-size: 0.82rem; font-weight: 600;">من:</label>
+                            <input type="date" id="directoryCustomStart" class="form-control" style="max-width: 160px;">
+                            <label style="font-size: 0.82rem; font-weight: 600;">إلى:</label>
+                            <input type="date" id="directoryCustomEnd" class="form-control" style="max-width: 160px;">
+                            <button class="btn btn-primary btn-sm" onclick="applyDirectoryDateFilter()" data-i18n="filterApply">تطبيق</button>
+                        </div>
+
+                        <!-- Directory Table -->
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="consultPatient">المستشير</th>
+                                        <th data-i18n="consultPhone">رقم الهاتف</th>
+                                        <th data-i18n="consultType">نوع الاستشارة</th>
+                                        <th data-i18n="consultStatus">الحالة</th>
+                                        <th data-i18n="consultOutcome">نتيجة الاستشارة</th>
+                                        <th data-i18n="consultFollowUpDate">تاريخ المتابعة</th>
+                                        <th data-i18n="consultActions">إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="directoryTableBody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="empty-state" id="emptyDirectoryState" style="display: none;">
+                            <i class="fa-solid fa-clipboard-user"></i>
+                            <p data-i18n="noConsultationsFound">لا توجد استشارات مطابقة للشروط</p>
                         </div>
                     </div>
                 </div>
@@ -217,6 +209,6 @@
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/notifications.js"></script>
-    <script src="js/settings.js"></script>
+    <script src="js/consultations-directory.js"></script>
 </body>
 </html>
