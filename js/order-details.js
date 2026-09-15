@@ -80,6 +80,33 @@ function renderOrderUI(order) {
         `);
     }
 
+    /**
+     * Extracts any prescription-attachment reference lines that script.js
+     * appends to customer notes (e.g. "روشتة مرفقة: <url>"), removes them
+     * from the displayed notes text, and returns how many were found so
+     * a count is shown instead of a raw storage link.
+     */
+    function extractPrescriptionAttachments(text) {
+        if (!text) return { cleanText: "", count: 0 };
+
+        const lines = text.split("\n");
+        let count = 0;
+
+        const remainingLines = lines.filter((line) => {
+            const isAttachmentLine =
+                /روشتة مرفقة/.test(line) ||
+                /https?:\/\/[^\s<]*\/prescriptions\//.test(line);
+
+            if (isAttachmentLine) {
+                count++;
+                return false;
+            }
+            return true;
+        });
+
+        return { cleanText: remainingLines.join("\n").trim(), count };
+    }
+
     const tracking = order.tracking_code || `#${order.id}`;
     
     // Header
@@ -103,7 +130,19 @@ function renderOrderUI(order) {
     if (custPhoneEl) custPhoneEl.innerHTML = `<a href="tel:${order.phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${order.phone}</a>`;
     if (custAddressEl) custAddressEl.innerHTML = linkifyAddress(order.address);
     if (orderDateEl) orderDateEl.textContent = utils.formatDate(order.created_at, true);
-    if (orderNotesEl) orderNotesEl.innerHTML = linkifyAddress(order.notes);
+    if (orderNotesEl) {
+        const { cleanText, count } = extractPrescriptionAttachments(order.notes);
+        let notesHtml = linkifyAddress(cleanText);
+        if (count > 0) {
+            const attachLabel = i18n.currentLang === "ar"
+                ? `📎 عدد الروشتات/الصور المرفقة: ${count}`
+                : `📎 Attached prescriptions/photos: ${count}`;
+            notesHtml = (notesHtml === "-")
+                ? attachLabel
+                : `${notesHtml}<br><br>${attachLabel}`;
+        }
+        orderNotesEl.innerHTML = notesHtml;
+    }
     if (orderBranchEl) {
         const branchName = order.branches 
             ? (i18n.currentLang === "en" ? (order.branches.name_en || order.branches.name_ar) : order.branches.name_ar)
