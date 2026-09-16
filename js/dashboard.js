@@ -80,7 +80,7 @@ async function loadRecentOrders() {
         const client = db.getClient();
         let query = client
             .from("orders")
-            .select("id, customer_name, phone, order_type, delivery_method, total, status, created_at, tracking_code")
+            .select("*")
             .order("created_at", { ascending: false })
             .limit(8);
 
@@ -108,6 +108,22 @@ async function loadRecentOrders() {
             const dateStr = utils.formatDate(order.created_at, true);
             const total = utils.formatCurrency(order.total || 0);
 
+            // Extract cancellation reason if cancelled
+            let cancelReason = "";
+            if (order.cancellation_reason) {
+                cancelReason = order.cancellation_reason;
+            } else if (order.notes) {
+                const match = order.notes.match(/\[سبب الإلغاء\]:\s*([^\n\r]+)/);
+                if (match && match[1]) cancelReason = match[1];
+            }
+
+            const isCancelled = (order.status || "").toLowerCase() === "cancelled";
+            const cancelNoteBadge = (isCancelled && cancelReason)
+                ? `<div style="margin-top: 0.35rem; font-size: 0.75rem; color: #DC2626; max-width: 150px; white-space: normal; line-height: 1.3;" title="${cancelReason}">
+                    <i class="fa-solid fa-circle-info"></i> ${cancelReason}
+                   </div>`
+                : "";
+
             return `
                 <tr>
                     <td><strong>${tracking}</strong></td>
@@ -117,7 +133,10 @@ async function loadRecentOrders() {
                     </td>
                     <td>${typeBadge}</td>
                     <td><strong style="color: var(--primary);">${total}</strong></td>
-                    <td>${statusBadge}</td>
+                    <td>
+                        ${statusBadge}
+                        ${cancelNoteBadge}
+                    </td>
                     <td><small style="color: var(--text-muted);">${dateStr}</small></td>
                     <td>
                         <a href="order-details.html?id=${order.id}" class="btn btn-outline btn-sm">

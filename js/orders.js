@@ -112,7 +112,7 @@ async function loadOrders() {
         const client = db.getClient();
         let query = client
             .from("orders")
-            .select("id, tracking_code, customer_name, phone, order_type, delivery_method, address, subtotal, delivery_fee, total, status, created_at, prescription_url, branch_id", { count: "exact" });
+            .select("*", { count: "exact" });
 
         // Branch limitation for pharmacists
         if (auth.isPharmacist() && auth.getUserBranchId()) {
@@ -188,6 +188,22 @@ async function loadOrders() {
             const dateStr    = utils.formatDate(order.created_at, true);
             const total      = utils.formatCurrency(order.total || 0);
 
+            // Extract cancellation reason if cancelled
+            let cancelReason = "";
+            if (order.cancellation_reason) {
+                cancelReason = order.cancellation_reason;
+            } else if (order.notes) {
+                const match = order.notes.match(/\[سبب الإلغاء\]:\s*([^\n\r]+)/);
+                if (match && match[1]) cancelReason = match[1];
+            }
+
+            const isCancelled = (order.status || "").toLowerCase() === "cancelled";
+            const cancelNoteBadge = (isCancelled && cancelReason)
+                ? `<div style="margin-top: 0.35rem; font-size: 0.75rem; color: #DC2626; max-width: 150px; white-space: normal; line-height: 1.3;" title="${cancelReason}">
+                    <i class="fa-solid fa-circle-info"></i> ${cancelReason}
+                   </div>`
+                : "";
+
             // Show mute button only for "new" orders that still have a pending alert
             const isNew     = (order.status || "").toLowerCase() === "new";
             const isPending = notifications.isPending(order.id);
@@ -212,7 +228,10 @@ async function loadOrders() {
                     </td>
                     <td>${typeBadge}</td>
                     <td><strong style="color: var(--primary);">${total}</strong></td>
-                    <td>${statusBadge}</td>
+                    <td>
+                        ${statusBadge}
+                        ${cancelNoteBadge}
+                    </td>
                     <td><small style="color: var(--text-muted);">${dateStr}</small></td>
                     <td style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
                         <a href="order-details.html?id=${order.id}" class="btn btn-outline btn-sm">

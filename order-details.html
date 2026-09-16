@@ -233,6 +233,12 @@
                                     <small style="color: var(--text-muted); display: block;" data-i18n="orderNotes">ملاحظات العميل</small>
                                     <p id="orderCustomerNotes" style="white-space: pre-line; color: var(--text-muted); font-size: 0.85rem;">-</p>
                                 </div>
+                                <div id="orderCancellationReasonContainer" style="display: none;">
+                                    <small style="color: var(--danger); font-weight: 700; display: flex; align-items: center; gap: 0.35rem;">
+                                        <i class="fa-solid fa-ban"></i> <span data-i18n="cancellationReason">سبب الإلغاء</span>
+                                    </small>
+                                    <p id="orderCancellationReasonText" style="white-space: pre-line; color: var(--danger); font-weight: 600; background: rgba(239, 68, 68, 0.08); padding: 0.75rem; border-radius: var(--radius-md); border-inline-start: 4px solid var(--danger); margin-top: 0.25rem; font-size: 0.88rem;">-</p>
+                                </div>
                             </div>
                         </div>
 
@@ -251,6 +257,52 @@
                     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Cancel Order Reason Modal -->
+    <div id="cancelOrderModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h4 class="card-title" style="color: var(--danger);">
+                    <i class="fa-solid fa-ban"></i> <span data-i18n="cancelOrderModalTitle">إلغاء الطلب</span>
+                </h4>
+                <button class="btn btn-icon btn-sm" onclick="closeCancelOrderModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
+                    يرجى توضيح سبب إلغاء هذا الطلب ليتم حفظه في سجل الطلبات وعرضه في بيانات الطلب الملغي:
+                </p>
+                
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);" data-i18n="cancelOrderQuickOptions">
+                        خيارات وأسباب شائعة:
+                    </label>
+                    <div class="cancellation-chips" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                        <button type="button" class="btn-chip" onclick="setCancelReasonText('طلب العميل إلغاء الطلب')">طلب العميل</button>
+                        <button type="button" class="btn-chip" onclick="setCancelReasonText('عدم توفر بعض الأصناف أو الأدوية المطلوبة في الفرع')">عدم توفر الأدوية</button>
+                        <button type="button" class="btn-chip" onclick="setCancelReasonText('العنوان غير واضح أو خارج نطاق التوصيل المتاح')">خارج نطاق التوصيل</button>
+                        <button type="button" class="btn-chip" onclick="setCancelReasonText('تعذر التواصل مع العميل (الهاتف مغلق / لا يوجد رد)')">الهاتف لا يرد</button>
+                        <button type="button" class="btn-chip" onclick="setCancelReasonText('طلب مكرر بالخطأ من العميل')">طلب مكرر</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="cancelReasonInput" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-main);">
+                        <span data-i18n="cancelOrderReasonLabel">سبب إلغاء الطلب</span> <span style="color: var(--danger);">*</span>:
+                    </label>
+                    <textarea id="cancelReasonInput" class="form-control" rows="3" data-i18n-placeholder="cancelOrderReasonPlaceholder" placeholder="اكتب سبب إلغاء الطلب بالتفصيل هنا..." style="resize: vertical;"></textarea>
+                    <small id="cancelReasonError" style="display: none; color: var(--danger); font-size: 0.8rem; margin-top: 0.35rem; font-weight: 600;">
+                        <i class="fa-solid fa-circle-exclamation"></i> <span data-i18n="cancelOrderReasonRequired">يرجى كتابة أو اختيار سبب لإلغاء هذا الطلب</span>
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCancelOrderModal()" data-i18n="cancel">تراجع</button>
+                <button class="btn btn-danger" id="confirmCancelOrderBtn" onclick="submitCancelOrder()">
+                    <i class="fa-solid fa-ban"></i> <span data-i18n="cancelOrderConfirmBtn">تأكيد إلغاء الطلب</span>
+                </button>
+            </div>
         </div>
     </div>
 

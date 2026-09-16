@@ -97,6 +97,16 @@ const TRANSLATIONS = {
         actionOutForDelivery: "إرسال مع مندوب التوصيل",
         actionCompleteOrder: "إتمام وتسليم الطلب",
         actionCancelOrder: "إلغاء الطلب",
+        cancelOrderModalTitle: "إلغاء الطلب",
+        cancelOrderReasonLabel: "سبب إلغاء الطلب",
+        cancelOrderReasonPlaceholder: "اكتب سبب إلغاء الطلب بالتفصيل هنا...",
+        cancelOrderQuickOptions: "خيارات وأسباب شائعة:",
+        cancelOrderReasonRequired: "يرجى كتابة أو اختيار سبب لإلغاء هذا الطلب",
+        cancelOrderConfirmBtn: "تأكيد إلغاء الطلب",
+        cancellationReason: "سبب الإلغاء",
+        orderCancelledBannerTitle: "هذا الطلب ملغي",
+        orderCancelledBannerDesc: "تم إلغاء هذا الطلب ولا يمكن إجراء المزيد من التعديلات عليه.",
+        cancellationReasonNone: "لم يُحدد سبب",
         actionViewDetails: "تفاصيل الطلب",
         
         // Prescriptions
@@ -329,6 +339,16 @@ const TRANSLATIONS = {
         actionOutForDelivery: "Send Out for Delivery",
         actionCompleteOrder: "Complete Order",
         actionCancelOrder: "Cancel Order",
+        cancelOrderModalTitle: "Cancel Order",
+        cancelOrderReasonLabel: "Cancellation Reason",
+        cancelOrderReasonPlaceholder: "Enter detailed cancellation reason here...",
+        cancelOrderQuickOptions: "Quick Common Reasons:",
+        cancelOrderReasonRequired: "Please enter or select a cancellation reason",
+        cancelOrderConfirmBtn: "Confirm Cancellation",
+        cancellationReason: "Cancellation Reason",
+        orderCancelledBannerTitle: "This Order is Cancelled",
+        orderCancelledBannerDesc: "This order has been cancelled and cannot be further processed.",
+        cancellationReasonNone: "No reason specified",
         actionViewDetails: "Order Details",
         
         // Prescriptions

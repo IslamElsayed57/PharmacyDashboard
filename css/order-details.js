@@ -80,51 +80,7 @@ function renderOrderUI(order) {
         `);
     }
 
-    /**
-     * Extracts any prescription-attachment reference lines that script.js
-     * appends to customer notes (e.g. "روشتة مرفقة: <url>"), removes them
-     * from the displayed notes text, and returns how many were found so
-     * a count is shown instead of a raw storage link.
-     */
-    function extractPrescriptionAttachments(text) {
-        if (!text) return { cleanText: "", count: 0 };
-
-        const lines = text.split("\n");
-        let count = 0;
-
-        const remainingLines = lines.filter((line) => {
-            const isAttachmentLine =
-                /روشتة مرفقة/.test(line) ||
-                /https?:\/\/[^\s<]*\/prescriptions\//.test(line);
-
-            if (isAttachmentLine) {
-                count++;
-                return false;
-            }
-            if (/\[سبب الإلغاء\]:/.test(line)) {
-                return false;
-            }
-            return true;
-        });
-
-        return { cleanText: remainingLines.join("\n").trim(), count };
-    }
-
-    function extractCancellationReason(ord) {
-        if (ord.cancellation_reason && ord.cancellation_reason.trim()) {
-            return ord.cancellation_reason.trim();
-        }
-        if (ord.notes) {
-            const match = ord.notes.match(/\[سبب الإلغاء\]:\s*([^\n\r]+)/);
-            if (match && match[1]) {
-                return match[1].trim();
-            }
-        }
-        return "";
-    }
-
     const tracking = order.tracking_code || `#${order.id}`;
-    const cancellationReason = extractCancellationReason(order);
     
     // Header
     const titleEl = document.getElementById("orderDetailTitle");
@@ -142,41 +98,17 @@ function renderOrderUI(order) {
     const orderDateEl = document.getElementById("orderCreatedAt");
     const orderNotesEl = document.getElementById("orderCustomerNotes");
     const orderBranchEl = document.getElementById("orderAssignedBranch");
-    const cancelReasonContainer = document.getElementById("orderCancellationReasonContainer");
-    const cancelReasonText = document.getElementById("orderCancellationReasonText");
 
     if (custNameEl) custNameEl.textContent = order.customer_name || "-";
     if (custPhoneEl) custPhoneEl.innerHTML = `<a href="tel:${order.phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${order.phone}</a>`;
     if (custAddressEl) custAddressEl.innerHTML = linkifyAddress(order.address);
     if (orderDateEl) orderDateEl.textContent = utils.formatDate(order.created_at, true);
-    if (orderNotesEl) {
-        const { cleanText, count } = extractPrescriptionAttachments(order.notes);
-        let notesHtml = linkifyAddress(cleanText);
-        if (count > 0) {
-            const attachLabel = i18n.currentLang === "ar"
-                ? `📎 عدد الروشتات/الصور المرفقة: ${count}`
-                : `📎 Attached prescriptions/photos: ${count}`;
-            notesHtml = (notesHtml === "-")
-                ? attachLabel
-                : `${notesHtml}<br><br>${attachLabel}`;
-        }
-        orderNotesEl.innerHTML = notesHtml;
-    }
+    if (orderNotesEl) orderNotesEl.innerHTML = linkifyAddress(order.notes);
     if (orderBranchEl) {
         const branchName = order.branches 
             ? (i18n.currentLang === "en" ? (order.branches.name_en || order.branches.name_ar) : order.branches.name_ar)
             : i18n.t("branchAll");
         orderBranchEl.textContent = branchName;
-    }
-
-    // Cancellation Reason Box in Customer details card
-    if (cancelReasonContainer && cancelReasonText) {
-        if (order.status === "cancelled") {
-            cancelReasonContainer.style.display = "block";
-            cancelReasonText.textContent = cancellationReason || i18n.t("cancellationReasonNone");
-        } else {
-            cancelReasonContainer.style.display = "none";
-        }
     }
 
     // Financials
@@ -192,7 +124,7 @@ function renderOrderUI(order) {
     renderProductsTable(order);
 
     // Status Workflow Buttons
-    renderWorkflowActions(order.status, order.order_type || order.delivery_method, cancellationReason);
+    renderWorkflowActions(order.status, order.order_type || order.delivery_method);
 }
 
 function renderProductsTable(order) {
@@ -224,7 +156,7 @@ function renderProductsTable(order) {
     }
 }
 
-function renderWorkflowActions(status, orderType, cancellationReason = "") {
+function renderWorkflowActions(status, orderType) {
     const container = document.getElementById("orderWorkflowActions");
     if (!container) return;
 
@@ -270,30 +202,11 @@ function renderWorkflowActions(status, orderType, cancellationReason = "") {
                 <i class="fa-solid fa-circle-check"></i> ${i18n.t("actionCompleteOrder")}
             </button>
         `;
-    } else if (s === "cancelled") {
-        buttonsHtml = `
-            <div class="cancellation-banner">
-                <div class="cancellation-banner-icon">
-                    <i class="fa-solid fa-ban"></i>
-                </div>
-                <div class="cancellation-banner-content">
-                    <div class="cancellation-banner-title">
-                        <i class="fa-solid fa-triangle-exclamation" style="margin-inline-end: 0.35rem;"></i>
-                        ${i18n.t("orderCancelledBannerTitle")}
-                    </div>
-                    <div class="cancellation-banner-reason">
-                        <strong>${i18n.t("cancellationReason")}:</strong>
-                        <span>${cancellationReason || i18n.t("cancellationReasonNone")}</span>
-                    </div>
-                </div>
-            </div>
-        `;
     } else {
-        // completed -> No further action
+        // completed or cancelled -> No further action
         buttonsHtml = `
             <span style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
-                <i class="fa-solid fa-circle-check" style="color: var(--primary); margin-inline-end: 0.35rem;"></i>
-                ${i18n.currentLang === "ar" ? "هذا الطلب مكتمل وتم تسليمه بنجاح." : "This order has been completed successfully."}
+                ${i18n.currentLang === "ar" ? "هذا الطلب في حالة نهائية ولا يتطلب إجراءات إضافية." : "This order is in a final state."}
             </span>
         `;
     }
@@ -301,7 +214,7 @@ function renderWorkflowActions(status, orderType, cancellationReason = "") {
     container.innerHTML = buttonsHtml;
 }
 
-async function updateOrderStatus(newStatus, cancellationReason = null) {
+async function updateOrderStatus(newStatus) {
     if (!currentOrder) return;
     const oldStatus = currentOrder.status;
 
@@ -309,37 +222,18 @@ async function updateOrderStatus(newStatus, cancellationReason = null) {
         const client = db.getClient();
 
         // 1. Update orders table
-        const updatePayload = {
-            status: newStatus,
-            updated_at: new Date().toISOString()
-        };
-
-        if (newStatus === "cancelled" && cancellationReason) {
-            updatePayload.cancellation_reason = cancellationReason;
-        }
-
-        let { error: updateError } = await client
+        const { error: updateError } = await client
             .from("orders")
-            .update(updatePayload)
+            .update({
+                status: newStatus,
+                updated_at: new Date().toISOString()
+            })
             .eq("id", currentOrder.id);
 
-        // Fallback if column 'cancellation_reason' doesn't exist in Supabase yet
-        if (updateError && (updateError.message?.includes("cancellation_reason") || updateError.code === "PGRST204" || updateError.code === "42703")) {
-            console.warn("cancellation_reason column not found in orders table, using fallback storage:", updateError);
-            delete updatePayload.cancellation_reason;
-            const fallbackNote = `\n[سبب الإلغاء]: ${cancellationReason}`;
-            updatePayload.notes = currentOrder.notes ? `${currentOrder.notes}${fallbackNote}` : `[سبب الإلغاء]: ${cancellationReason}`;
-            
-            const retryRes = await client
-                .from("orders")
-                .update(updatePayload)
-                .eq("id", currentOrder.id);
-            if (retryRes.error) throw retryRes.error;
-        } else if (updateError) {
-            throw updateError;
-        }
+        if (updateError) throw updateError;
 
         // 2. Pharmacist took action → stop the persistent alert for this order
+        //    This works whether the action is confirm, cancel, or any later step.
         notifications.removePendingAlert(String(currentOrder.id));
 
         // 3. Insert audit log if status history table exists
@@ -348,7 +242,6 @@ async function updateOrderStatus(newStatus, cancellationReason = null) {
                 order_id: currentOrder.id,
                 old_status: oldStatus,
                 new_status: newStatus,
-                notes: cancellationReason || null,
                 changed_by: auth.user?.id || null
             });
         } catch (auditErr) {
@@ -365,72 +258,11 @@ async function updateOrderStatus(newStatus, cancellationReason = null) {
 }
 
 function confirmCancelOrder() {
-    openCancelOrderModal();
-}
-
-function openCancelOrderModal() {
-    const modal = document.getElementById("cancelOrderModal");
-    const input = document.getElementById("cancelReasonInput");
-    const err = document.getElementById("cancelReasonError");
-    if (!modal) return;
-
-    if (input) input.value = "";
-    if (err) err.style.display = "none";
-    document.querySelectorAll(".cancellation-chips .btn-chip").forEach(btn => btn.classList.remove("active"));
-
-    modal.classList.add("active");
-    if (input) setTimeout(() => input.focus(), 100);
-}
-
-function closeCancelOrderModal() {
-    const modal = document.getElementById("cancelOrderModal");
-    if (modal) modal.classList.remove("active");
-}
-
-function setCancelReasonText(text) {
-    const input = document.getElementById("cancelReasonInput");
-    const err = document.getElementById("cancelReasonError");
-    if (input) {
-        input.value = text;
-        input.focus();
-    }
-    if (err) err.style.display = "none";
-
-    document.querySelectorAll(".cancellation-chips .btn-chip").forEach(btn => {
-        if (btn.textContent.trim() === text || text.includes(btn.textContent.trim())) {
-            btn.classList.add("active");
-        } else {
-            btn.classList.remove("active");
-        }
-    });
-}
-
-async function submitCancelOrder() {
-    const input = document.getElementById("cancelReasonInput");
-    const err = document.getElementById("cancelReasonError");
-    const reason = input ? input.value.trim() : "";
-
-    if (!reason) {
-        if (err) err.style.display = "block";
-        if (input) input.focus();
-        return;
-    }
-
-    const submitBtn = document.getElementById("confirmCancelOrderBtn");
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${i18n.currentLang === 'ar' ? 'جاري الإلغاء...' : 'Cancelling...'}`;
-    }
-
-    try {
-        await updateOrderStatus("cancelled", reason);
-        closeCancelOrderModal();
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<i class="fa-solid fa-ban"></i> <span>${i18n.t("cancelOrderConfirmBtn")}</span>`;
-        }
-    }
+    utils.showConfirm(
+        i18n.t("actionCancelOrder"),
+        i18n.currentLang === "ar" ? "هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟" : "Are you sure you want to cancel this order?",
+        () => updateOrderStatus("cancelled")
+    );
 }
 
 async function loadPrescriptionSignedLink(rxUrl) {
@@ -483,25 +315,14 @@ async function loadStatusHistory(orderId) {
             return;
         }
 
-        timelineEl.innerHTML = data.map(h => {
-            const rawStatus = (h.new_status || "").toLowerCase();
-            const statusLabelKey = "status" + rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
-            const statusLabel = i18n.t(statusLabelKey) || h.new_status;
-            const noteHtml = h.notes 
-                ? `<div style="margin-top: 0.3rem; color: #DC2626; font-size: 0.8rem; background: rgba(239,68,68,0.08); padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); border-inline-start: 3px solid #DC2626;"><strong>${i18n.t("cancellationReason")}:</strong> ${h.notes}</div>` 
-                : "";
-
-            return `
+        timelineEl.innerHTML = data.map(h => `
             <div style="padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color); font-size: 0.85rem;">
-                <strong>${statusLabel}</strong> 
+                <strong>${h.new_status}</strong> 
                 <span style="color: var(--text-muted); font-size: 0.75rem;">(${utils.formatDate(h.created_at, true)})</span>
                 ${h.profiles?.full_name ? `<br><small style="color: var(--text-subtle);">بواسطة: ${h.profiles.full_name}</small>` : ""}
-                ${noteHtml}
             </div>
-            `;
-        }).join("");
+        `).join("");
     } catch (e) {
         timelineEl.innerHTML = "";
     }
 }
-

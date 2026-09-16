@@ -124,6 +124,7 @@ ALTER TABLE public.orders
     ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC(10, 2) DEFAULT 0,
     ADD COLUMN IF NOT EXISTS total NUMERIC(10, 2) DEFAULT 0,
     ADD COLUMN IF NOT EXISTS prescription_path TEXT,
+    ADD COLUMN IF NOT EXISTS cancellation_reason TEXT,
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
 
 -- ==========================================================================
