@@ -32,11 +32,13 @@ async function loadSettings() {
             const enName = document.getElementById("settingPharmacyNameEn");
             const hotline = document.getElementById("settingHotline");
             const wa = document.getElementById("settingWhatsapp");
+            const email = document.getElementById("settingEmail");
 
             if (arName) arName.value = pi.name_ar || "";
             if (enName) enName.value = pi.name_en || "";
             if (hotline) hotline.value = pi.hotline || "";
             if (wa) wa.value = pi.whatsapp || "";
+            if (email) email.value = pi.email || "";
         }
 
         // Delivery Rules
@@ -44,9 +46,25 @@ async function loadSettings() {
             const dr = map.delivery_rules;
             const fee = document.getElementById("settingDefaultDeliveryFee");
             const threshold = document.getElementById("settingFreeDeliveryThreshold");
+            const estTime = document.getElementById("settingEstimatedDeliveryTime");
 
             if (fee) fee.value = dr.default_fee || 0;
             if (threshold) threshold.value = dr.free_delivery_threshold || 0;
+            if (estTime) estTime.value = dr.estimated_time || "30-45 دقيقة";
+        }
+
+        // Social Media Links
+        if (map.social_links) {
+            const sl = map.social_links;
+            const fb = document.getElementById("settingFacebook");
+            const ig = document.getElementById("settingInstagram");
+            const tt = document.getElementById("settingTiktok");
+            const tw = document.getElementById("settingTwitter");
+
+            if (fb) fb.value = sl.facebook || "";
+            if (ig) ig.value = sl.instagram || "";
+            if (tt) tt.value = sl.tiktok || "";
+            if (tw) tw.value = sl.twitter || "";
         }
 
         // Non-admin can only view
@@ -94,11 +112,18 @@ async function savePharmacySettings(e) {
     const nameEn = document.getElementById("settingPharmacyNameEn").value.trim();
     const hotline = document.getElementById("settingHotline").value.trim();
     const wa = document.getElementById("settingWhatsapp").value.trim();
+    const email = document.getElementById("settingEmail").value.trim();
 
     try {
         const { error } = await db.getClient().from("settings").upsert({
             key: "pharmacy_info",
-            value: { name_ar: nameAr, name_en: nameEn, hotline: hotline, whatsapp: wa },
+            value: { 
+                name_ar: nameAr, 
+                name_en: nameEn, 
+                hotline: hotline, 
+                whatsapp: wa,
+                email: email
+            },
             updated_at: new Date().toISOString()
         });
 
@@ -116,11 +141,16 @@ async function saveDeliverySettings(e) {
 
     const fee = parseFloat(document.getElementById("settingDefaultDeliveryFee").value) || 0;
     const threshold = parseFloat(document.getElementById("settingFreeDeliveryThreshold").value) || 0;
+    const estTime = document.getElementById("settingEstimatedDeliveryTime").value.trim() || "30-45 دقيقة";
 
     try {
         const { error } = await db.getClient().from("settings").upsert({
             key: "delivery_rules",
-            value: { default_fee: fee, free_delivery_threshold: threshold },
+            value: { 
+                default_fee: fee, 
+                free_delivery_threshold: threshold,
+                estimated_time: estTime
+            },
             updated_at: new Date().toISOString()
         });
 
@@ -131,3 +161,33 @@ async function saveDeliverySettings(e) {
         utils.showToast(i18n.t("errorGeneric"), "error");
     }
 }
+
+async function saveSocialSettings(e) {
+    e.preventDefault();
+    if (!auth.isAdmin()) return;
+
+    const fb = document.getElementById("settingFacebook").value.trim();
+    const ig = document.getElementById("settingInstagram").value.trim();
+    const tt = document.getElementById("settingTiktok").value.trim();
+    const tw = document.getElementById("settingTwitter").value.trim();
+
+    try {
+        const { error } = await db.getClient().from("settings").upsert({
+            key: "social_links",
+            value: { 
+                facebook: fb,
+                instagram: ig,
+                tiktok: tt,
+                twitter: tw
+            },
+            updated_at: new Date().toISOString()
+        });
+
+        if (error) throw error;
+        utils.showToast(i18n.t("saveSuccess"), "success");
+    } catch (err) {
+        console.error("Save social settings error:", err);
+        utils.showToast(i18n.t("errorGeneric"), "error");
+    }
+}
+

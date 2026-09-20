@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS public.branches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name_ar TEXT NOT NULL,
     name_en TEXT,
-    city TEXT NOT NULL DEFAULT 'cairo',
+    city TEXT NOT NULL DEFAULT 'الدقهلية',
     address TEXT NOT NULL,
     phone TEXT,
     hours TEXT DEFAULT '24 ساعة يومياً (خدمة التوصيل متاحة)',
@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS public.branches (
 -- Seed initial branches matching the customer website if not present
 INSERT INTO public.branches (name_ar, name_en, city, address, phone, manager)
 VALUES 
-    ('فرع طناح - المنصورة - الدقهلية', 'Tanah Branch - Mansoura - Dakahlia', 'dakahlia', 'الشارع الرئيسي - بجوار المجمع الطبي، طناح، مركز المنصورة، الدقهلية', '050-2450001', 'د. إسلام السيد'),
-    ('فرع كفر طناح - المنصورة - الدقهلية', 'Kafr Tanah Branch - Mansoura - Dakahlia', 'dakahlia', 'طريق كفر طناح الرئيسي - أمام المسجد الكبير، كفر طناح، المنصورة، الدقهلية', '050-2450002', 'د. أحمد العوضي')
+    ('فرع طناح - المنصورة - الدقهلية', 'Tanah Branch - Mansoura - Dakahlia', 'الدقهلية', 'الشارع الرئيسي - بجوار المجمع الطبي، طناح، مركز المنصورة، الدقهلية', '050-2450001', 'د. إسلام السيد'),
+    ('فرع كفر طناح - المنصورة - الدقهلية', 'Kafr Tanah Branch - Mansoura - Dakahlia', 'الدقهلية', 'طريق كفر طناح الرئيسي - أمام المسجد الكبير، كفر طناح، المنصورة، الدقهلية', '050-2450002', 'د. أحمد العوضي')
 ON CONFLICT DO NOTHING;
 
 -- ==========================================================================
@@ -165,8 +165,9 @@ CREATE TABLE IF NOT EXISTS public.settings (
 
 INSERT INTO public.settings (key, value)
 VALUES 
-    ('pharmacy_info', '{"name_ar": "صيدليات العوضي", "name_en": "Elawadi Pharmacies", "hotline": "19850", "whatsapp": "01000000000"}'::jsonb),
-    ('delivery_rules', '{"default_fee": 25.00, "free_delivery_threshold": 500.00, "estimated_time": "30-45 دقيقة"}'::jsonb)
+    ('pharmacy_info', '{"name_ar": "صيدليات العوضي", "name_en": "Elawadi Pharmacies", "hotline": "19850", "whatsapp": "01000000000", "email": "care@elawadipharmacies.eg"}'::jsonb),
+    ('delivery_rules', '{"default_fee": 25.00, "free_delivery_threshold": 500.00, "estimated_time": "30-45 دقيقة"}'::jsonb),
+    ('social_links', '{"facebook": "", "instagram": "", "tiktok": "", "twitter": ""}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 -- ==========================================================================
@@ -304,5 +305,6 @@ CREATE POLICY "Public read product images" ON storage.objects FOR SELECT USING (
 DROP POLICY IF EXISTS "Admin upload product images" ON storage.objects;
 CREATE POLICY "Admin upload product images" ON storage.objects FOR ALL USING (bucket_id = 'product-images' AND auth.role() = 'authenticated');
 
--- Enable Realtime publication for orders
+-- Enable Realtime publication for orders and settings
 ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.settings;

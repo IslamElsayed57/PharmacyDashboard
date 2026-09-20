@@ -4,6 +4,34 @@
 
 let branchesList = [];
 
+const CITY_NAME_MAP = {
+    cairo: "القاهرة",
+    giza: "الجيزة",
+    alexandria: "الإسكندرية",
+    dakahlia: "الدقهلية",
+    mansoura: "المنصورة"
+};
+
+function formatGovernorate(city) {
+    if (!city) return "-";
+    const lower = city.toLowerCase().trim();
+    return CITY_NAME_MAP[lower] || city;
+}
+
+function handleGovernorateSelectChange(val) {
+    const customInput = document.getElementById("branchCityCustomInput");
+    if (!customInput) return;
+    if (val === "other") {
+        customInput.style.display = "block";
+        customInput.required = true;
+        customInput.focus();
+    } else {
+        customInput.style.display = "none";
+        customInput.required = false;
+        customInput.value = "";
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     utils.setupMobileSidebar();
 
@@ -21,7 +49,7 @@ async function loadBranches() {
     const emptyState = document.getElementById("emptyBranchesState");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem;">${i18n.t("loadingData")}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 3rem;">${i18n.t("loadingData")}</td></tr>`;
 
     try {
         const client = db.getClient();
@@ -37,7 +65,7 @@ async function loadBranches() {
 
     } catch (err) {
         console.error("Load branches error:", err);
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #EF4444; padding: 2rem;">${i18n.t("errorGeneric")}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #EF4444; padding: 2rem;">${i18n.t("errorGeneric")}</td></tr>`;
     }
 }
 
@@ -65,6 +93,9 @@ function renderBranchesTable() {
             ? `<span class="badge badge-active">${i18n.t("activate")}</span>`
             : `<span class="badge badge-inactive">${i18n.t("deactivate")}</span>`;
 
+        const displayGov = formatGovernorate(b.city);
+        const govBadge = `<span class="badge" style="background: rgba(16, 185, 129, 0.12); color: var(--primary); font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-location-dot" style="margin-left: 4px;"></i>${displayGov}</span>`;
+
         let actionBtns = "-";
         if (canEdit) {
             actionBtns = `
@@ -82,6 +113,7 @@ function renderBranchesTable() {
         return `
             <tr>
                 <td><strong>${name}</strong></td>
+                <td>${govBadge}</td>
                 <td><small style="color: var(--text-muted);">${b.address}</small></td>
                 <td><a href="tel:${b.phone}" style="color: var(--primary); font-weight: 600;">${b.phone || '-'}</a></td>
                 <td>${b.manager || '-'}</td>
@@ -95,6 +127,15 @@ function renderBranchesTable() {
 function openAddBranchModal() {
     document.getElementById("branchForm").reset();
     document.getElementById("branchIdInput").value = "";
+    
+    const citySelect = document.getElementById("branchCitySelect");
+    if (citySelect) citySelect.value = "الدقهلية";
+    const customInput = document.getElementById("branchCityCustomInput");
+    if (customInput) {
+        customInput.style.display = "none";
+        customInput.value = "";
+    }
+
     document.getElementById("branchModalTitle").textContent = i18n.t("addBranch");
     document.getElementById("branchModal").classList.add("active");
 }
@@ -109,6 +150,41 @@ function openEditBranchModal(branchId) {
     document.getElementById("branchAddressInput").value = b.address || "";
     document.getElementById("branchPhoneInput").value = b.phone || "";
     document.getElementById("branchManagerInput").value = b.manager || "";
+
+    const citySelect = document.getElementById("branchCitySelect");
+    const customInput = document.getElementById("branchCityCustomInput");
+    const formattedCity = formatGovernorate(b.city || "");
+
+    if (citySelect) {
+        let matched = false;
+        for (let i = 0; i < citySelect.options.length; i++) {
+            const optVal = citySelect.options[i].value;
+            if (optVal && (optVal === b.city || optVal === formattedCity)) {
+                citySelect.value = optVal;
+                matched = true;
+                break;
+            }
+        }
+
+        if (matched) {
+            if (customInput) {
+                customInput.style.display = "none";
+                customInput.value = "";
+            }
+        } else if (b.city) {
+            citySelect.value = "other";
+            if (customInput) {
+                customInput.style.display = "block";
+                customInput.value = b.city;
+            }
+        } else {
+            citySelect.value = "الدقهلية";
+            if (customInput) {
+                customInput.style.display = "none";
+                customInput.value = "";
+            }
+        }
+    }
 
     document.getElementById("branchModalTitle").textContent = i18n.t("editBranch");
     document.getElementById("branchModal").classList.add("active");
@@ -127,14 +203,22 @@ async function handleBranchFormSubmit(e) {
     const phone = document.getElementById("branchPhoneInput").value.trim();
     const manager = document.getElementById("branchManagerInput").value.trim();
 
-    if (!nameAr || !address) {
-        utils.showToast(i18n.currentLang === "ar" ? "يرجى إدخال اسم الفرع والعنوان" : "Please provide branch name and address", "error");
+    const citySelect = document.getElementById("branchCitySelect");
+    const customInput = document.getElementById("branchCityCustomInput");
+    let city = citySelect ? citySelect.value : "";
+    if (city === "other") {
+        city = customInput ? customInput.value.trim() : "";
+    }
+
+    if (!nameAr || !address || !city) {
+        utils.showToast(i18n.currentLang === "ar" ? "يرجى إدخال اسم الفرع والمحافظة والعنوان" : "Please provide branch name, governorate and address", "error");
         return;
     }
 
     const payload = {
         name_ar: nameAr,
         name_en: nameEn,
+        city: city,
         address: address,
         phone: phone,
         manager: manager

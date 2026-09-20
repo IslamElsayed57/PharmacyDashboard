@@ -198,10 +198,12 @@ async function loadOrders() {
             }
 
             const isCancelled = (order.status || "").toLowerCase() === "cancelled";
+            const cancelReasonSafe = String(cancelReason).replace(/"/g, "&quot;");
             const cancelNoteBadge = (isCancelled && cancelReason)
-                ? `<div style="margin-top: 0.35rem; font-size: 0.75rem; color: #DC2626; max-width: 150px; white-space: normal; line-height: 1.3;" title="${cancelReason}">
-                    <i class="fa-solid fa-circle-info"></i> ${cancelReason}
-                   </div>`
+                ? `<span title="${cancelReasonSafe}" style="display:inline-flex; align-items:center; gap:0.3rem; max-width:150px; font-size:0.75rem; color:#DC2626; white-space:nowrap;">
+                    <i class="fa-solid fa-circle-info" style="flex-shrink:0;"></i>
+                    <span style="overflow:hidden; text-overflow:ellipsis;">${cancelReason}</span>
+                   </span>`
                 : "";
 
             // Show mute button only for "new" orders that still have a pending alert
@@ -229,15 +231,19 @@ async function loadOrders() {
                     <td>${typeBadge}</td>
                     <td><strong style="color: var(--primary);">${total}</strong></td>
                     <td>
-                        ${statusBadge}
-                        ${cancelNoteBadge}
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:nowrap;">
+                            ${statusBadge}
+                            ${cancelNoteBadge}
+                        </div>
                     </td>
                     <td><small style="color: var(--text-muted);">${dateStr}</small></td>
-                    <td style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-                        <a href="order-details.html?id=${order.id}" class="btn btn-outline btn-sm">
-                            <i class="fa-solid fa-eye"></i> ${i18n.t("actionViewDetails")}
-                        </a>
-                        ${muteBtn}
+                    <td>
+                        <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                            <a href="order-details.html?id=${order.id}" class="btn btn-outline btn-sm">
+                                <i class="fa-solid fa-eye"></i> ${i18n.t("actionViewDetails")}
+                            </a>
+                            ${muteBtn}
+                        </div>
                     </td>
                 </tr>
             `;

@@ -148,13 +148,17 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">الخط الساخن</label>
-                                <input type="text" id="settingHotline" class="form-control settings-input" value="19850">
+                                <input type="text" id="settingHotline" class="form-control settings-input" placeholder="19850" value="19850">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">رقم خدمة عملاء واتساب</label>
-                                <input type="text" id="settingWhatsapp" class="form-control settings-input" value="01000000000">
+                                <input type="text" id="settingWhatsapp" class="form-control settings-input" placeholder="01000000000" value="01000000000">
                             </div>
-                            <button type="submit" class="btn btn-primary admin-save-btn" data-i18n="save">حفظ البيانات</button>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="email">البريد الإلكتروني الرسمي</label>
+                                <input type="email" id="settingEmail" class="form-control settings-input" placeholder="care@elawadipharmacies.eg" value="care@elawadipharmacies.eg">
+                            </div>
+                            <button type="submit" class="btn btn-primary admin-save-btn" data-i18n="savePharmacyInfo">حفظ بيانات الصيدلية الأساسية</button>
                         </form>
                     </div>
 
@@ -175,7 +179,40 @@
                                 <label class="form-label">الحد الأدنى للتوصيل المجاني (ج.م)</label>
                                 <input type="number" step="50" id="settingFreeDeliveryThreshold" class="form-control settings-input" value="500.00">
                             </div>
-                            <button type="submit" class="btn btn-primary admin-save-btn" data-i18n="save">حفظ قواعد التوصيل</button>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="estimatedDeliveryTime">وقت التوصيل التقديري (يظهر للعميل)</label>
+                                <input type="text" id="settingEstimatedDeliveryTime" class="form-control settings-input" placeholder="30-45 دقيقة" value="30-45 دقيقة">
+                            </div>
+                            <button type="submit" class="btn btn-primary admin-save-btn" data-i18n="saveDeliveryRules">حفظ قواعد وسياسة التوصيل</button>
+                        </form>
+                    </div>
+
+                    <!-- Social Media Links -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fa-solid fa-share-nodes" style="color: var(--primary);"></i>
+                                <span data-i18n="socialSettingsTitle">روابط منصات التواصل الاجتماعي</span>
+                            </div>
+                        </div>
+                        <form onsubmit="saveSocialSettings(event)" style="padding: 1.5rem;">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fa-brands fa-facebook-f" style="color: #1877F2; margin-left: 0.35rem;"></i> <span data-i18n="facebookUrl">رابط صفحة فيسبوك</span></label>
+                                <input type="url" id="settingFacebook" class="form-control settings-input" placeholder="https://facebook.com/yourpage">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fa-brands fa-instagram" style="color: #E4405F; margin-left: 0.35rem;"></i> <span data-i18n="instagramUrl">رابط حساب انستجرام</span></label>
+                                <input type="url" id="settingInstagram" class="form-control settings-input" placeholder="https://instagram.com/youraccount">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fa-brands fa-tiktok" style="color: var(--text-color); margin-left: 0.35rem;"></i> <span data-i18n="tiktokUrl">رابط حساب تيك توك</span></label>
+                                <input type="url" id="settingTiktok" class="form-control settings-input" placeholder="https://tiktok.com/@youraccount">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fa-brands fa-x-twitter" style="color: var(--text-color); margin-left: 0.35rem;"></i> <span data-i18n="twitterUrl">رابط حساب إكس (تويتر)</span></label>
+                                <input type="url" id="settingTwitter" class="form-control settings-input" placeholder="https://x.com/youraccount">
+                            </div>
+                            <button type="submit" class="btn btn-primary admin-save-btn" data-i18n="saveSocialSettings">حفظ روابط السوشيال ميديا</button>
                         </form>
                     </div>
 

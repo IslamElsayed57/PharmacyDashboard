@@ -148,6 +148,7 @@
                                 <thead>
                                     <tr>
                                         <th data-i18n="branchNameAr">اسم الفرع</th>
+                                        <th data-i18n="branchGovernorate">المحافظة</th>
                                         <th data-i18n="branchAddress">العنوان</th>
                                         <th data-i18n="branchPhone">التليفون</th>
                                         <th data-i18n="branchManager">مدير الفرع</th>
@@ -193,6 +194,43 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label" data-i18n="branchGovernorate">المحافظة *</label>
+                        <select id="branchCitySelect" class="form-control" required onchange="handleGovernorateSelectChange(this.value)">
+                            <option value="" disabled selected data-i18n="selectGovernorate">-- اختر المحافظة --</option>
+                            <option value="الدقهلية">الدقهلية</option>
+                            <option value="المنصورة">المنصورة</option>
+                            <option value="القاهرة">القاهرة</option>
+                            <option value="الجيزة">الجيزة</option>
+                            <option value="الإسكندرية">الإسكندرية</option>
+                            <option value="القليوبية">القليوبية</option>
+                            <option value="الشرقية">الشرقية</option>
+                            <option value="الغربية">الغربية</option>
+                            <option value="المنوفية">المنوفية</option>
+                            <option value="دمياط">دمياط</option>
+                            <option value="كفر الشيخ">كفر الشيخ</option>
+                            <option value="البحيرة">البحيرة</option>
+                            <option value="الإسماعيلية">الإسماعيلية</option>
+                            <option value="بورسعيد">بورسعيد</option>
+                            <option value="السويس">السويس</option>
+                            <option value="الفيوم">الفيوم</option>
+                            <option value="بني سويف">بني سويف</option>
+                            <option value="المنيا">المنيا</option>
+                            <option value="أسيوط">أسيوط</option>
+                            <option value="سوهاج">سوهاج</option>
+                            <option value="قنا">قنا</option>
+                            <option value="الأقصر">الأقصر</option>
+                            <option value="أسوان">أسوان</option>
+                            <option value="البحر الأحمر">البحر الأحمر</option>
+                            <option value="الوادي الجديد">الوادي الجديد</option>
+                            <option value="مطروح">مطروح</option>
+                            <option value="شمال سيناء">شمال سيناء</option>
+                            <option value="جنوب سيناء">جنوب سيناء</option>
+                            <option value="other" data-i18n="otherGovernorate">أخرى (كتابة يدوية)</option>
+                        </select>
+                        <input type="text" id="branchCityCustomInput" class="form-control" style="display: none; margin-top: 0.5rem;" placeholder="اكتب اسم المحافظة أو المدينة...">
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label" data-i18n="branchAddress">العنوان التفصيلي *</label>
                         <input type="text" id="branchAddressInput" class="form-control" required placeholder="الشارع الرئيسي - طناح - مركز المنصورة">
                     </div>
@@ -211,7 +249,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeBranchModal()" data-i18n="cancel">إلغاء</button>
-                    <button type="submit" class="btn btn-primary" data-i18n="save">حفظ الفرع</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="saveBranch">حفظ الفرع</button>
                 </div>
             </form>
         </div>

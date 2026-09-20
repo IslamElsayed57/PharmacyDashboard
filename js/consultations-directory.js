@@ -140,10 +140,12 @@ async function loadDirectory() {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 3rem;">${i18n.t("loadingData")}</td></tr>`;
 
     try {
-        const { data, error } = await db.getClient()
+        let query = db.getClient()
             .from("consultations")
-            .select("id, patient_name, phone, consultation_type, contact_method, details, status, created_at, outcome, outcome_notes, followed_up_by, followed_up_at")
+            .select("id, patient_name, phone, consultation_type, contact_method, details, status, created_at, outcome, outcome_notes, followed_up_by, followed_up_at, branch_id")
             .order("created_at", { ascending: false });
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -252,7 +254,11 @@ async function openFollowUpModal(id) {
             return;
         }
 
-        let modal = document.getElementById("followUpModal");
+        // Rebuild the modal on every open. It used to be created once and reused,
+        // so the save button kept the previous consultation's id in its onclick
+        // and stayed stuck on the loading spinner after the first save.
+        document.getElementById("followUpModal")?.remove();
+        let modal = null;
         if (!modal) {
             modal = document.createElement("div");
             modal.id = "followUpModal";
@@ -331,7 +337,7 @@ async function saveFollowUp(id) {
     btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
     try {
-        const { error } = await db.getClient()
+        const { data: updatedRows, error } = await db.getClient()
             .from("consultations")
             .update({
                 outcome: outcome,
@@ -340,9 +346,23 @@ async function saveFollowUp(id) {
                 followed_up_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
-            .eq("id", id);
+            .eq("id", id)
+            .select("id");
 
         if (error) throw error;
+
+        // 0 rows = the consultation belongs to another branch (read-only for us)
+        if (!updatedRows || updatedRows.length === 0) {
+            utils.showToast(
+                i18n.currentLang === "ar"
+                    ? "لا يمكنك تعديل متابعة هذه الاستشارة لأنها تخص فرعاً آخر"
+                    : "You cannot edit this consultation, it belongs to another branch",
+                "error"
+            );
+            closeFollowUpModal();
+            await loadDirectory();
+            return;
+        }
 
         utils.showToast(i18n.t("outcomeSaveSuccess"), "success");
         closeFollowUpModal();

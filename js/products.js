@@ -5,6 +5,10 @@
 let productsList = [];
 let categoriesList = [];
 
+// Bulk selection (admin only): ids of the rows currently ticked
+let selectedProductIds = new Set();
+let displayedProducts = [];
+
 let productFilterState = {
     searchQuery: "",
     categoryId: "all"
@@ -23,7 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupCategoryFilter();
 
     window.onLanguageChange = () => {
-        renderProductsTable();
+        applyProductFilters();
         loadCategoriesDropdown();
     };
 });
@@ -143,7 +147,7 @@ async function loadProducts() {
     const emptyState = document.getElementById("emptyProductsState");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem;">${i18n.t("loadingData")}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 3rem;">${i18n.t("loadingData")}</td></tr>`;
 
     try {
         const client = db.getClient();
@@ -159,7 +163,7 @@ async function loadProducts() {
 
     } catch (err) {
         console.error("Load products error:", err);
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #EF4444; padding: 2rem;">${i18n.t("errorGeneric")}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #EF4444; padding: 2rem;">${i18n.t("errorGeneric")}</td></tr>`;
     }
 }
 
@@ -169,11 +173,19 @@ function renderProductsTable(items = productsList) {
     const countBadge = document.getElementById("productsCountBadge");
     if (!tbody) return;
 
+    displayedProducts = items;
+
+    // Only rows that are visible can stay selected, so a bulk action can
+    // never touch products the user can't currently see (e.g. after filtering).
+    const visibleIds = new Set(items.map(p => p.id));
+    selectedProductIds.forEach(id => { if (!visibleIds.has(id)) selectedProductIds.delete(id); });
+
     if (countBadge) countBadge.textContent = `${items.length} ${i18n.t("navProducts")}`;
 
     if (items.length === 0) {
         tbody.innerHTML = "";
         if (emptyState) emptyState.style.display = "block";
+        updateBulkBar();
         return;
     }
 
@@ -209,8 +221,14 @@ function renderProductsTable(items = productsList) {
             `;
         }
 
+        const isSelected = selectedProductIds.has(p.id);
+        const checkCell = canEdit
+            ? `<td><input type="checkbox" class="product-row-check" ${isSelected ? "checked" : ""} onchange="toggleProductSelection('${p.id}', this.checked)" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);"></td>`
+            : "";
+
         return `
-            <tr>
+            <tr data-product-id="${p.id}" ${isSelected ? 'style="background: var(--primary-light);"' : ""}>
+                ${checkCell}
                 <td>${imgHtml}</td>
                 <td>
                     <div style="font-weight: 600;">${name}</div>
@@ -223,6 +241,164 @@ function renderProductsTable(items = productsList) {
             </tr>
         `;
     }).join("");
+
+    updateBulkBar();
+}
+
+// ==========================================================================
+// Bulk selection & bulk actions (admin only)
+// ==========================================================================
+
+function toggleProductSelection(productId, checked) {
+    if (checked) selectedProductIds.add(productId);
+    else selectedProductIds.delete(productId);
+
+    const row = document.querySelector(`#productsTableBody tr[data-product-id="${productId}"]`);
+    if (row) row.style.background = checked ? "var(--primary-light)" : "";
+
+    updateBulkBar();
+}
+
+function toggleSelectAllProducts(checked) {
+    if (checked) displayedProducts.forEach(p => selectedProductIds.add(p.id));
+    else displayedProducts.forEach(p => selectedProductIds.delete(p.id));
+    renderProductsTable(displayedProducts);
+}
+
+function clearProductSelection() {
+    selectedProductIds.clear();
+    renderProductsTable(displayedProducts);
+}
+
+function updateBulkBar() {
+    const ar = i18n.currentLang === "ar";
+    const bar = document.getElementById("bulkActionsBar");
+    const selectAll = document.getElementById("selectAllProducts");
+    const count = selectedProductIds.size;
+
+    // Header checkbox: checked = all visible rows ticked, indeterminate = some
+    if (selectAll) {
+        const total = displayedProducts.length;
+        selectAll.checked = total > 0 && count === total;
+        selectAll.indeterminate = count > 0 && count < total;
+        selectAll.title = ar ? "تحديد الكل" : "Select all";
+    }
+
+    if (!bar) return;
+
+    if (count === 0 || !auth.isAdmin()) {
+        bar.style.display = "none";
+        bar.innerHTML = "";
+        return;
+    }
+
+    bar.style.cssText = "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; padding: 0.7rem 1rem; background: var(--primary-light); border: 1px solid var(--primary); border-radius: var(--radius-md);";
+    bar.innerHTML = `
+        <strong style="margin-inline-end: auto;">
+            <i class="fa-solid fa-square-check" style="color: var(--primary);"></i>
+            ${ar ? `تم تحديد ${count} منتج` : `${count} selected`}
+        </strong>
+        <button class="btn btn-primary btn-sm" onclick="bulkSetProductsActive(true)">
+            <i class="fa-solid fa-eye"></i> ${ar ? "تنشيط المحدد" : "Activate selected"}
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="bulkSetProductsActive(false)">
+            <i class="fa-solid fa-eye-slash"></i> ${ar ? "إلغاء تنشيط المحدد" : "Deactivate selected"}
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="bulkDeleteProducts()">
+            <i class="fa-solid fa-trash"></i> ${ar ? "حذف المحدد نهائياً" : "Delete selected"}
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="clearProductSelection()">
+            <i class="fa-solid fa-xmark"></i> ${ar ? "إلغاء التحديد" : "Clear"}
+        </button>
+    `;
+}
+
+/**
+ * Runs one bulk operation ("activate" | "deactivate" | "delete") in chunks
+ * (keeps the request URL short) and returns how many rows were really
+ * affected — RLS silently skips rows the user isn't allowed to change.
+ */
+async function runBulkProductOperation(ids, operation) {
+    const client = db.getClient();
+    const CHUNK = 50;
+    let affected = 0;
+
+    for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
+
+        const request = operation === "delete"
+            ? client.from("products").delete()
+            : client.from("products").update({
+                is_active: operation === "activate",
+                updated_at: new Date().toISOString()
+            });
+
+        const { data, error } = await request.in("id", chunk).select("id");
+        if (error) throw error;
+        affected += (data || []).length;
+    }
+
+    return affected;
+}
+
+async function finishBulkOperation(requested, affected) {
+    const ar = i18n.currentLang === "ar";
+    selectedProductIds.clear();
+
+    if (affected < requested) {
+        utils.showToast(
+            ar ? `تم تنفيذ العملية على ${affected} من ${requested} منتج فقط، تحقق من الصلاحيات`
+               : `Only ${affected} of ${requested} products were updated. Check permissions.`,
+            "error"
+        );
+    } else {
+        utils.showToast(i18n.t("saveSuccess"), "success");
+    }
+
+    await loadProducts();
+}
+
+function bulkSetProductsActive(newStatus) {
+    if (!auth.isAdmin()) return;
+    const ids = [...selectedProductIds];
+    if (ids.length === 0) return;
+
+    const ar = i18n.currentLang === "ar";
+    const actionText = newStatus ? i18n.t("activate") : i18n.t("deactivate");
+    const msg = ar
+        ? `هل أنت متأكد من ${actionText} ${ids.length} منتج؟`
+        : `Are you sure you want to ${actionText.toLowerCase()} ${ids.length} products?`;
+
+    utils.showConfirm(i18n.t("confirmDeleteTitle"), msg, async () => {
+        try {
+            const affected = await runBulkProductOperation(ids, newStatus ? "activate" : "deactivate");
+            await finishBulkOperation(ids.length, affected);
+        } catch (err) {
+            console.error("Bulk toggle products error:", err);
+            utils.showToast(i18n.t("errorGeneric"), "error");
+        }
+    });
+}
+
+function bulkDeleteProducts() {
+    if (!auth.isAdmin()) return;
+    const ids = [...selectedProductIds];
+    if (ids.length === 0) return;
+
+    const ar = i18n.currentLang === "ar";
+    const msg = ar
+        ? `سيتم حذف ${ids.length} منتج نهائياً ولا يمكن التراجع عن ذلك. إذا كنت تريد إخفاءها من الموقع فقط استخدم "إلغاء التنشيط". هل تريد المتابعة؟`
+        : `${ids.length} products will be permanently deleted and this cannot be undone. To only hide them from the website use "Deactivate". Continue?`;
+
+    utils.showConfirm(i18n.t("confirmDeleteTitle"), msg, async () => {
+        try {
+            const affected = await runBulkProductOperation(ids, "delete");
+            await finishBulkOperation(ids.length, affected);
+        } catch (err) {
+            console.error("Bulk delete products error:", err);
+            utils.showToast(i18n.t("errorGeneric"), "error");
+        }
+    });
 }
 
 function openAddProductModal() {

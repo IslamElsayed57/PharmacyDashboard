@@ -83,6 +83,44 @@ function getConsultStatusBadge(status) {
     return `<span class="badge ${cfg.cls}"><i class="fa-solid ${cfg.icon}"></i> ${i18n.t(cfg.key)}</span>`;
 }
 
+/**
+ * Pill badge (same look as the status badge) showing which branch took over /
+ * changed the status of this consultation. "-" while nobody has touched it.
+ * The full branch name is kept in the tooltip; the pill shows the short
+ * part before the first " - " (e.g. "فرع طناح").
+ */
+function getConsultBranchBadge(consult) {
+    const b = consult && consult.branches;
+    if (!b) return `<span style="color: var(--text-subtle);">-</span>`;
+
+    const ar = i18n.currentLang !== "en";
+    const fullName = ar ? b.name_ar : (b.name_en || b.name_ar);
+    const shortName = String(fullName || "").split(" - ")[0];
+    const tip = (ar ? "تم تغيير حالة الاستشارة بواسطة " : "Status changed by ") + String(fullName || "");
+    const safeTitle = tip.replace(/"/g, "&quot;");
+
+    return `<span class="badge badge-delivery" title="${safeTitle}"><i class="fa-solid fa-store"></i> ${shortName}</span>`;
+}
+
+/**
+ * Who may change the status of a consultation?
+ *  - admin: always.
+ *  - pharmacist: only if the consultation is unclaimed (his branch will then
+ *    claim it) or already claimed by HIS branch. Once another branch changed
+ *    the status, it is locked for everybody else.
+ * (The database enforces the same rule through RLS — see
+ *  consultations_branch_lock.sql — this just drives the UI.)
+ */
+function getConsultLockInfo(consult) {
+    if (auth.isAdmin()) return { locked: false, willClaim: false };
+
+    const myBranchId = auth.getUserBranchId();
+    if (!myBranchId) return { locked: true, reason: "noBranch" };
+    if (!consult.branch_id) return { locked: false, willClaim: true };
+    if (consult.branch_id === myBranchId) return { locked: false, willClaim: false };
+    return { locked: true, reason: "otherBranch" };
+}
+
 function getContactMethodBadge(method) {
     const isPhone = (method || "").toLowerCase() !== "whatsapp";
     if (isPhone) {
@@ -97,13 +135,16 @@ async function loadConsultations() {
     const paginationEl = document.getElementById("consultationsPagination");
     if (!tableBody) return;
 
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 3rem;">${i18n.t("loadingData")}</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 3rem;">${i18n.t("loadingData")}</td></tr>`;
 
     try {
         const client = db.getClient();
         let query = client
             .from("consultations")
-            .select("id, patient_name, phone, consultation_type, preferred_time, contact_method, details, status, created_at, outcome, outcome_notes", { count: "exact" });
+            .select("id, patient_name, phone, consultation_type, preferred_time, contact_method, details, status, created_at, outcome, outcome_notes, branch_id, branches(name_ar, name_en)", { count: "exact" });
+
+        // Every branch sees all consultations; the ones claimed by another
+        // branch are read-only for it (see getConsultLockInfo / RLS).
 
         if (consultsState.searchQuery) {
             const sq = consultsState.searchQuery;
@@ -168,12 +209,15 @@ async function loadConsultations() {
                     <td>${utils.translateConsultType(c.consultation_type)}</td>
                     <td>${contactBadge}</td>
                     <td>${statusBadge}</td>
+                    <td>${getConsultBranchBadge(c)}</td>
                     <td><small style="color: var(--text-muted);">${dateStr}</small></td>
-                    <td style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-                        <button class="btn btn-outline btn-sm" onclick="openConsultationDetails('${c.id}')">
-                            <i class="fa-solid fa-eye"></i> ${i18n.t("actionViewDetails")}
-                        </button>
-                        ${muteBtn}
+                    <td>
+                        <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                            <button class="btn btn-outline btn-sm" onclick="openConsultationDetails('${c.id}')">
+                                <i class="fa-solid fa-eye"></i> ${i18n.t("actionViewDetails")}
+                            </button>
+                            ${muteBtn}
+                        </div>
                     </td>
                 </tr>
             `;
@@ -183,7 +227,7 @@ async function loadConsultations() {
 
     } catch (err) {
         console.error("Load consultations error:", err);
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #EF4444; padding: 2rem;">${i18n.t("errorGeneric")}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #EF4444; padding: 2rem;">${i18n.t("errorGeneric")}</td></tr>`;
     }
 }
 
@@ -246,7 +290,7 @@ async function openConsultationDetails(id) {
     try {
         const { data, error } = await db.getClient()
             .from("consultations")
-            .select("*")
+            .select("*, branches(name_ar, name_en)")
             .eq("id", id)
             .maybeSingle();
 
@@ -281,6 +325,7 @@ async function openConsultationDetails(id) {
                 <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${contactLabel}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultPreferredTime")}:</strong> ${data.preferred_time || "-"}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultStatus")}:</strong> ${getConsultStatusBadge(data.status)}</p>
+                <p style="margin:0;"><strong>${i18n.t("filterBranch")}:</strong> ${getConsultBranchBadge(data)}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultDate")}:</strong> ${utils.formatDate(data.created_at, true)}</p>
                 <hr style="border:none;border-top:1px solid var(--border-color);">
                 <p style="margin:0;"><strong>${i18n.t("consultDetails")}:</strong></p>
@@ -291,19 +336,57 @@ async function openConsultationDetails(id) {
         const currentStatus = (data.status || "new").toLowerCase();
         const current = (val) => val === currentStatus ? "selected" : "";
 
-        document.getElementById("consultModalFooter").innerHTML = `
-            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;width:100%;">
-                <select id="consultStatusSelect" class="form-control" style="flex:1;min-width:150px;">
-                    <option value="new" ${current("new")}>${i18n.t("statusNew")}</option>
-                    <option value="contacted" ${current("contacted")}>${i18n.t("statusContacted")}</option>
-                    <option value="completed" ${current("completed")}>${i18n.t("statusCompleted")}</option>
-                    <option value="no_response" ${current("no_response")}>${i18n.t("statusNoResponse")}</option>
-                </select>
-                <button class="btn btn-primary" onclick="updateConsultationStatus('${data.id}', this)">
-                    <i class="fa-solid fa-check"></i> <span>${i18n.t("save")}</span>
-                </button>
-            </div>
-        `;
+        const ar = i18n.currentLang !== "en";
+        const lock = getConsultLockInfo(data);
+        let footerHtml;
+
+        if (lock.locked) {
+            const branchName = data.branches
+                ? (ar ? data.branches.name_ar : (data.branches.name_en || data.branches.name_ar))
+                : "";
+            const lockMsg = lock.reason === "noBranch"
+                ? (ar ? "حسابك غير مرتبط بفرع، لذلك لا يمكنك تغيير حالة الاستشارات. برجاء مراجعة الإدارة."
+                      : "Your account is not linked to a branch, so you cannot change consultation statuses.")
+                : (ar ? `تم تغيير حالة هذه الاستشارة بواسطة ${branchName}، ولا يمكن لباقي الفروع تعديلها.`
+                      : `The status of this consultation was changed by ${branchName}; other branches cannot edit it.`);
+
+            footerHtml = `
+                <div style="display:flex;align-items:center;gap:0.6rem;width:100%;color:var(--text-muted);font-size:0.88rem;">
+                    <i class="fa-solid fa-lock" style="color:#DC2626;"></i>
+                    <span>${lockMsg}</span>
+                </div>
+            `;
+        } else {
+            const myBranchName = auth.branch
+                ? (ar ? auth.branch.name_ar : (auth.branch.name_en || auth.branch.name_ar))
+                : (ar ? "فرعك" : "your branch");
+            const claimHint = lock.willClaim
+                ? `<div style="width:100%;font-size:0.82rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-circle-info"></i>
+                        ${ar ? `عند تغيير الحالة سيتم ربط الاستشارة بفرعك (${myBranchName}) ولن يُسمح لباقي الفروع بتغييرها.`
+                             : `Changing the status links this consultation to your branch (${myBranchName}); other branches will not be able to change it.`}
+                   </div>`
+                : "";
+
+            footerHtml = `
+                <div style="display:flex;flex-direction:column;gap:0.6rem;width:100%;">
+                    ${claimHint}
+                    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;width:100%;">
+                        <select id="consultStatusSelect" class="form-control" style="flex:1;min-width:150px;">
+                            <option value="new" ${current("new")}>${i18n.t("statusNew")}</option>
+                            <option value="contacted" ${current("contacted")}>${i18n.t("statusContacted")}</option>
+                            <option value="completed" ${current("completed")}>${i18n.t("statusCompleted")}</option>
+                            <option value="no_response" ${current("no_response")}>${i18n.t("statusNoResponse")}</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="updateConsultationStatus('${data.id}', this)">
+                            <i class="fa-solid fa-check"></i> <span>${i18n.t("save")}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById("consultModalFooter").innerHTML = footerHtml;
 
         modal.classList.add("active");
     } catch (err) {
@@ -321,18 +404,54 @@ async function updateConsultationStatus(id, btn) {
     const select = document.getElementById("consultStatusSelect");
     if (!select) return;
 
+    // A pharmacist must belong to a branch, otherwise nobody could be credited
+    // with (and locked to) the consultation.
+    if (auth.isPharmacist() && !auth.getUserBranchId()) {
+        utils.showToast(
+            i18n.currentLang === "ar"
+                ? "حسابك غير مرتبط بفرع، لا يمكنك تغيير حالة الاستشارة"
+                : "Your account is not linked to a branch",
+            "error"
+        );
+        return;
+    }
+
     const newStatus = select.value;
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
     try {
-        const { error } = await db.getClient()
+        const payload = { status: newStatus, updated_at: new Date().toISOString() };
+
+        // Whoever changes the status "claims" the consultation for his branch:
+        // from now on it is linked to that branch and locked for the others (RLS).
+        const myBranchId = auth.getUserBranchId();
+        if (auth.isPharmacist() && myBranchId) {
+            payload.branch_id = myBranchId;
+        }
+
+        const { data: updatedRows, error } = await db.getClient()
             .from("consultations")
-            .update({ status: newStatus, updated_at: new Date().toISOString() })
-            .eq("id", id);
+            .update(payload)
+            .eq("id", id)
+            .select("id");
 
         if (error) throw error;
+
+        // 0 rows updated = another branch claimed it a moment ago
+        if (!updatedRows || updatedRows.length === 0) {
+            utils.showToast(
+                i18n.currentLang === "ar"
+                    ? "تم استلام هذه الاستشارة بواسطة فرع آخر"
+                    : "This consultation was already taken by another branch",
+                "error"
+            );
+            notifications.removeConsultPendingAlert(String(id));
+            closeConsultModal();
+            loadConsultations();
+            return;
+        }
 
         // Clearing the alert if it leaves "new"
         if (newStatus !== "new") {
