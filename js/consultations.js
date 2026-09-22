@@ -182,8 +182,8 @@ async function loadConsultations() {
         if (emptyState) emptyState.style.display = "none";
 
         tableBody.innerHTML = data.map(c => {
-            const patient = c.patient_name || "-";
-            const phone = c.phone || "-";
+            const patient = utils.escHtml(c.patient_name || "-");
+            const phone = utils.escHtml(c.phone || "-");
             const statusBadge = getConsultStatusBadge(c.status);
             const contactBadge = getContactMethodBadge(c.contact_method);
             const dateStr = utils.formatDate(c.created_at, true);
@@ -323,13 +323,13 @@ async function openConsultationDetails(id) {
             <div style="display:grid;gap:0.75rem;">
                 <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.translateConsultType(data.consultation_type)}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${contactLabel}</p>
-                <p style="margin:0;"><strong>${i18n.t("consultPreferredTime")}:</strong> ${data.preferred_time || "-"}</p>
+                <p style="margin:0;"><strong>${i18n.t("consultPreferredTime")}:</strong> ${utils.escHtml(data.preferred_time || "-")}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultStatus")}:</strong> ${getConsultStatusBadge(data.status)}</p>
                 <p style="margin:0;"><strong>${i18n.t("filterBranch")}:</strong> ${getConsultBranchBadge(data)}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultDate")}:</strong> ${utils.formatDate(data.created_at, true)}</p>
                 <hr style="border:none;border-top:1px solid var(--border-color);">
                 <p style="margin:0;"><strong>${i18n.t("consultDetails")}:</strong></p>
-                <p style="margin:0; background: var(--bg-surface-subtle); padding: 0.75rem; border-radius: var(--radius-md); white-space: pre-wrap;">${data.details || "-"}</p>
+                <p style="margin:0; background: var(--bg-surface-subtle); padding: 0.75rem; border-radius: var(--radius-md); white-space: pre-wrap;">${utils.escHtml(data.details || "-")}</p>
             </div>
         `;
 

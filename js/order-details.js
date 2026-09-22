@@ -146,7 +146,8 @@ function renderOrderUI(order) {
     const cancelReasonText = document.getElementById("orderCancellationReasonText");
 
     if (custNameEl) custNameEl.textContent = order.customer_name || "-";
-    if (custPhoneEl) custPhoneEl.innerHTML = `<a href="tel:${order.phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${order.phone}</a>`;
+    const phoneSafe = utils.escHtml(order.phone || "");
+    if (custPhoneEl) custPhoneEl.innerHTML = `<a href="tel:${phoneSafe}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${phoneSafe}</a>`;
     if (custAddressEl) custAddressEl.innerHTML = linkifyAddress(order.address);
     if (orderDateEl) orderDateEl.textContent = utils.formatDate(order.created_at, true);
     if (orderNotesEl) {
@@ -202,7 +203,7 @@ function renderProductsTable(order) {
     if (order.order_items && order.order_items.length > 0) {
         tbody.innerHTML = order.order_items.map(item => `
             <tr>
-                <td><strong>${item.product_name_snapshot}</strong></td>
+                <td><strong>${utils.escHtml(item.product_name_snapshot || "-")}</strong></td>
                 <td>${item.quantity}</td>
                 <td>${utils.formatCurrency(item.unit_price)}</td>
                 <td><strong style="color: var(--primary);">${utils.formatCurrency(item.total_price)}</strong></td>
@@ -210,7 +211,7 @@ function renderProductsTable(order) {
         `).join("");
     } else {
         // Parse medications plain text if historical plain text format
-        const medText = order.medications || "-";
+        const medText = utils.escHtml(order.medications || "-");
         tbody.innerHTML = `
             <tr>
                 <td colspan="4">
@@ -488,7 +489,7 @@ async function loadStatusHistory(orderId) {
             const statusLabelKey = "status" + rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
             const statusLabel = i18n.t(statusLabelKey) || h.new_status;
             const noteHtml = h.notes 
-                ? `<div style="margin-top: 0.3rem; color: #DC2626; font-size: 0.8rem; background: rgba(239,68,68,0.08); padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); border-inline-start: 3px solid #DC2626;"><strong>${i18n.t("cancellationReason")}:</strong> ${h.notes}</div>` 
+                ? `<div style="margin-top: 0.3rem; color: #DC2626; font-size: 0.8rem; background: rgba(239,68,68,0.08); padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); border-inline-start: 3px solid #DC2626;"><strong>${i18n.t("cancellationReason")}:</strong> ${utils.escHtml(h.notes)}</div>` 
                 : "";
 
             return `

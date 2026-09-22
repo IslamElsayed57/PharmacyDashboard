@@ -180,9 +180,9 @@ async function loadOrders() {
         if (emptyState) emptyState.style.display = "none";
 
         tableBody.innerHTML = data.map(order => {
-            const tracking   = order.tracking_code || `#${order.id}`;
-            const customer   = order.customer_name  || "-";
-            const phone      = order.phone           || "-";
+            const tracking   = utils.escHtml(order.tracking_code || `#${order.id}`);
+            const customer   = utils.escHtml(order.customer_name  || "-");
+            const phone      = utils.escHtml(order.phone           || "-");
             const typeBadge  = utils.getOrderTypeBadge(order.order_type || order.delivery_method);
             const statusBadge = utils.getStatusBadge(order.status);
             const dateStr    = utils.formatDate(order.created_at, true);
@@ -196,9 +196,10 @@ async function loadOrders() {
                 const match = order.notes.match(/\[سبب الإلغاء\]:\s*([^\n\r]+)/);
                 if (match && match[1]) cancelReason = match[1];
             }
+            cancelReason = utils.escHtml(cancelReason);
+            const cancelReasonSafe = cancelReason; // بقت متأمّنة بالفعل
 
             const isCancelled = (order.status || "").toLowerCase() === "cancelled";
-            const cancelReasonSafe = String(cancelReason).replace(/"/g, "&quot;");
             const cancelNoteBadge = (isCancelled && cancelReason)
                 ? `<span title="${cancelReasonSafe}" style="display:inline-flex; align-items:center; gap:0.3rem; max-width:150px; font-size:0.75rem; color:#DC2626; white-space:nowrap;">
                     <i class="fa-solid fa-circle-info" style="flex-shrink:0;"></i>

@@ -111,11 +111,13 @@ function renderCustomersTable() {
         // Date ONLY (no time) as required
         const lastDateOnly = utils.formatDate(cust.lastOrderDate, false);
         const totalSpent = utils.formatCurrency(cust.totalSpent);
+        const custName = utils.escHtml(cust.name);
+        const custPhone = utils.escHtml(cust.phone);
 
         return `
             <tr>
-                <td><strong>${cust.name}</strong></td>
-                <td><a href="tel:${cust.phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${cust.phone}</a></td>
+                <td><strong>${custName}</strong></td>
+                <td><a href="tel:${custPhone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${custPhone}</a></td>
                 <td><span class="badge badge-active">${cust.ordersCount} ${i18n.t("navOrders")}</span></td>
                 <td><small style="color: var(--text-muted); font-weight: 600;">${lastDateOnly}</small></td>
                 <td>

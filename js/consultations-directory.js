@@ -220,10 +220,12 @@ function renderDirectoryTable() {
 
     tbody.innerHTML = filteredDirectory.map(c => {
         const followUpDate = c.followed_up_at ? utils.formatDate(c.followed_up_at, false) : "-";
+        const patientName = utils.escHtml(c.patient_name || "-");
+        const phone = utils.escHtml(c.phone || "-");
         return `
             <tr>
-                <td><strong>${c.patient_name || "-"}</strong></td>
-                <td><a href="tel:${c.phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${c.phone}</a></td>
+                <td><strong>${patientName}</strong></td>
+                <td><a href="tel:${phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${phone}</a></td>
                 <td>${utils.translateConsultType(c.consultation_type)}</td>
                 <td>${getConsultStatusBadge(c.status)}</td>
                 <td>${getOutcomeBadge(c.outcome)}</td>
@@ -308,7 +310,7 @@ async function openFollowUpModal(id) {
             <div style="background: var(--bg-surface-subtle); padding: 0.75rem; border-radius: var(--radius-md); display:grid; gap:0.35rem;">
                 <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.translateConsultType(data.consultation_type)}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${data.contact_method === "whatsapp" ? i18n.t("contactWhatsapp") : i18n.t("contactPhone")}</p>
-                <p style="margin:0;"><strong>${i18n.t("consultDetails")}:</strong> ${data.details || "-"}</p>
+                <p style="margin:0;"><strong>${i18n.t("consultDetails")}:</strong> ${utils.escHtml(data.details || "-")}</p>
             </div>
         `;
 

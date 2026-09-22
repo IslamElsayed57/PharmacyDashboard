@@ -100,9 +100,9 @@ async function loadRecentOrders() {
         if (emptyState) emptyState.style.display = "none";
 
         tableBody.innerHTML = data.map(order => {
-            const tracking = order.tracking_code || `#${order.id}`;
-            const customer = order.customer_name || "-";
-            const phone = order.phone || "-";
+            const tracking = utils.escHtml(order.tracking_code || `#${order.id}`);
+            const customer = utils.escHtml(order.customer_name || "-");
+            const phone = utils.escHtml(order.phone || "-");
             const typeBadge = utils.getOrderTypeBadge(order.order_type || order.delivery_method);
             const statusBadge = utils.getStatusBadge(order.status);
             const dateStr = utils.formatDate(order.created_at, true);
@@ -116,6 +116,7 @@ async function loadRecentOrders() {
                 const match = order.notes.match(/\[سبب الإلغاء\]:\s*([^\n\r]+)/);
                 if (match && match[1]) cancelReason = match[1];
             }
+            cancelReason = utils.escHtml(cancelReason);
 
             const isCancelled = (order.status || "").toLowerCase() === "cancelled";
             const cancelNoteBadge = (isCancelled && cancelReason)
