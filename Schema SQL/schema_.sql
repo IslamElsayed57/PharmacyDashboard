@@ -15,10 +15,17 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Ensure 'prescriptions' bucket exists and set to PRIVATE for medical privacy
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('prescriptions', 'prescriptions', false)
-ON CONFLICT (id) DO UPDATE SET public = false;
+-- Ensure 'prescriptions' bucket exists, PRIVATE, images/PDF only, max 5MB
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+    'prescriptions',
+    'prescriptions',
+    false,
+    5242880,
+    array['image/jpeg','image/png','image/webp','image/gif','application/pdf']
+)
+ON CONFLICT (id) DO UPDATE SET public = false, file_size_limit = 5242880,
+    allowed_mime_types = array['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
 
 -- ==========================================================================
 -- 3. BRANCHES TABLE
@@ -294,7 +301,11 @@ CREATE POLICY "Admin write settings" ON public.settings FOR ALL USING (public.is
 
 -- Storage RLS Policies
 DROP POLICY IF EXISTS "Allow public prescription upload" ON storage.objects;
-CREATE POLICY "Allow public prescription upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'prescriptions');
+CREATE POLICY "Allow public prescription upload" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'prescriptions'
+    AND (new.metadata->>'size')::bigint <= 5242880
+    AND new.metadata->>'mimetype' IN ('image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf')
+);
 
 DROP POLICY IF EXISTS "Allow authenticated staff view prescriptions" ON storage.objects;
 CREATE POLICY "Allow authenticated staff view prescriptions" ON storage.objects FOR SELECT USING (bucket_id = 'prescriptions' AND auth.role() = 'authenticated');

@@ -226,7 +226,7 @@ function renderDirectoryTable() {
             <tr>
                 <td><strong>${patientName}</strong></td>
                 <td><a href="tel:${phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${phone}</a></td>
-                <td>${utils.translateConsultType(c.consultation_type)}</td>
+                <td>${utils.escHtml(utils.translateConsultType(c.consultation_type))}</td>
                 <td>${getConsultStatusBadge(c.status)}</td>
                 <td>${getOutcomeBadge(c.outcome)}</td>
                 <td><small style="color: var(--text-muted);">${followUpDate}</small></td>
@@ -308,7 +308,7 @@ async function openFollowUpModal(id) {
 
         document.getElementById("followUpInfo").innerHTML = `
             <div style="background: var(--bg-surface-subtle); padding: 0.75rem; border-radius: var(--radius-md); display:grid; gap:0.35rem;">
-                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.translateConsultType(data.consultation_type)}</p>
+                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.escHtml(utils.translateConsultType(data.consultation_type))}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${data.contact_method === "whatsapp" ? i18n.t("contactWhatsapp") : i18n.t("contactPhone")}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultDetails")}:</strong> ${utils.escHtml(data.details || "-")}</p>
             </div>

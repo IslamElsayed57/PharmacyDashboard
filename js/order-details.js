@@ -284,7 +284,7 @@ function renderWorkflowActions(status, orderType, cancellationReason = "") {
                     </div>
                     <div class="cancellation-banner-reason">
                         <strong>${i18n.t("cancellationReason")}:</strong>
-                        <span>${cancellationReason || i18n.t("cancellationReasonNone")}</span>
+                        <span>${utils.escHtml(cancellationReason) || i18n.t("cancellationReasonNone")}</span>
                     </div>
                 </div>
             </div>

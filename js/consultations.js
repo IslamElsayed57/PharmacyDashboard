@@ -206,7 +206,7 @@ async function loadConsultations() {
                 <tr ${isNew && isPending ? 'style="background: rgba(34,211,238,0.06);"' : ''}>
                     <td><strong>${patient}</strong></td>
                     <td><a href="tel:${phone}" style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-phone"></i> ${phone}</a></td>
-                    <td>${utils.translateConsultType(c.consultation_type)}</td>
+                    <td>${utils.escHtml(utils.translateConsultType(c.consultation_type))}</td>
                     <td>${contactBadge}</td>
                     <td>${statusBadge}</td>
                     <td>${getConsultBranchBadge(c)}</td>
@@ -321,7 +321,7 @@ async function openConsultationDetails(id) {
         const contactLabel = data.contact_method === "whatsapp" ? i18n.t("contactWhatsapp") : i18n.t("contactPhone");
         document.getElementById("consultModalBody").innerHTML = `
             <div style="display:grid;gap:0.75rem;">
-                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.translateConsultType(data.consultation_type)}</p>
+                <p style="margin:0;"><strong>${i18n.t("consultType")}:</strong> ${utils.escHtml(utils.translateConsultType(data.consultation_type))}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultContactMethod")}:</strong> ${contactLabel}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultPreferredTime")}:</strong> ${utils.escHtml(data.preferred_time || "-")}</p>
                 <p style="margin:0;"><strong>${i18n.t("consultStatus")}:</strong> ${getConsultStatusBadge(data.status)}</p>
