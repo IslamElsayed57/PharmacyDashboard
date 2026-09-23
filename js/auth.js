@@ -27,6 +27,15 @@ class AuthService {
             this.user = session.user;
             await this.loadUserProfile();
 
+            // SECURITY FIX (F11): If no DB profile exists, reject session & sign out
+            if (!this.profile) {
+                console.warn("No profile found for user:", this.user.id);
+                await this.signOut();
+                alert(typeof i18n !== "undefined" && i18n.t("noProfileError") ? i18n.t("noProfileError") : "حسابك غير مسجل في النظام. يرجى التواصل مع المسؤول.");
+                window.location.href = "login.html";
+                return false;
+            }
+
             // If profile is inactive, force sign out
             if (this.profile && !this.profile.is_active) {
                 await this.signOut();
@@ -62,27 +71,18 @@ class AuthService {
 
             if (error) {
                 console.warn("Could not load profile:", error);
-                // Fallback default admin profile if profiles table not populated yet
-                this.profile = {
-                    id: this.user.id,
-                    full_name: this.user.email.split("@")[0],
-                    role: "admin",
-                    is_active: true
-                };
+                this.profile = null;
             } else if (data) {
                 this.profile = data;
                 this.branch = data.branches || null;
             } else {
-                // If user exists in Auth but profile not seeded, default to admin for initial setup
-                this.profile = {
-                    id: this.user.id,
-                    full_name: this.user.email.split("@")[0],
-                    role: "admin",
-                    is_active: true
-                };
+                // SECURITY FIX (F11): Do NOT fallback to default admin profile.
+                // If user has no profile in DB, set profile to null (access denied).
+                this.profile = null;
             }
         } catch (err) {
             console.error("Error loading user profile:", err);
+            this.profile = null;
         }
     }
 
